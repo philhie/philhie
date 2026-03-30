@@ -10,7 +10,6 @@ function generateImpulseResponse(ctx: AudioContext): AudioBuffer {
   for (let channel = 0; channel < 2; channel++) {
     const data = buffer.getChannelData(channel);
     for (let i = 0; i < length; i++) {
-      // Exponentially decaying white noise
       data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 3);
     }
   }
@@ -18,21 +17,13 @@ function generateImpulseResponse(ctx: AudioContext): AudioBuffer {
   return buffer;
 }
 
-export default function SoundEngine({
-  enabled,
-  cursorX,
-  cursorY,
-}: {
-  enabled: boolean;
-  cursorX: number;
-  cursorY: number;
-}) {
+export default function SoundEngine({ enabled }: { enabled: boolean }) {
   const ctxRef = useRef<AudioContext | null>(null);
-  const padOscRef = useRef<OscillatorNode | null>(null);
-  const padGainRef = useRef<GainNode | null>(null);
-  const reverbRef = useRef<ConvolverNode | null>(null);
-  const dryGainRef = useRef<GainNode | null>(null);
+  const pad1Ref = useRef<OscillatorNode | null>(null);
+  const pad2Ref = useRef<OscillatorNode | null>(null);
   const masterGainRef = useRef<GainNode | null>(null);
+  const rafRef = useRef<number>(0);
+  const cursorRef = useRef({ x: 0, y: 0 });
   const lastActivityRef = useRef(0);
 
   const init = useCallback(() => {
@@ -52,13 +43,11 @@ export default function SoundEngine({
       const reverb = ctx.createConvolver();
       reverb.buffer = generateImpulseResponse(ctx);
       reverb.connect(masterGain);
-      reverbRef.current = reverb;
 
       // Dry path
       const dryGain = ctx.createGain();
       dryGain.gain.value = 0.3;
       dryGain.connect(masterGain);
-      dryGainRef.current = dryGain;
 
       // Wet path gain
       const wetGain = ctx.createGain();
@@ -82,18 +71,34 @@ export default function SoundEngine({
       pad2.connect(padGain);
       padGain.connect(wetGain);
       padGain.connect(dryGain);
-      padGainRef.current = padGain;
 
       pad1.start();
       pad2.start();
-      padOscRef.current = pad1;
+      pad1Ref.current = pad1;
+      pad2Ref.current = pad2;
 
       // Fade in master
       masterGain.gain.setTargetAtTime(0.4, ctx.currentTime, 1.0);
     } catch {
-      // AudioContext creation failed, feature disabled
+      // AudioContext creation failed
     }
   }, []);
+
+  // Own pointermove listener for cursor modulation
+  useEffect(() => {
+    if (!enabled) return;
+
+    const onMove = (e: PointerEvent) => {
+      cursorRef.current = {
+        x: (e.clientX / window.innerWidth) * 2 - 1,
+        y: -(e.clientY / window.innerHeight) * 2 + 1,
+      };
+      lastActivityRef.current = Date.now();
+    };
+
+    window.addEventListener("pointermove", onMove);
+    return () => window.removeEventListener("pointermove", onMove);
+  }, [enabled]);
 
   // Initialize on enable
   useEffect(() => {
@@ -102,48 +107,61 @@ export default function SoundEngine({
       init();
     }
     return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (pad1Ref.current) {
+        try { pad1Ref.current.stop(); } catch { /* already stopped */ }
+        pad1Ref.current = null;
+      }
+      if (pad2Ref.current) {
+        try { pad2Ref.current.stop(); } catch { /* already stopped */ }
+        pad2Ref.current = null;
+      }
       if (ctxRef.current) {
         ctxRef.current.close().catch(() => {});
         ctxRef.current = null;
-        padOscRef.current = null;
-        padGainRef.current = null;
-        reverbRef.current = null;
-        dryGainRef.current = null;
         masterGainRef.current = null;
       }
     };
   }, [enabled, init]);
 
-  // Cursor modulation
+  // rAF loop for cursor modulation + idle detection
   useEffect(() => {
-    if (!enabled || !padOscRef.current || !ctxRef.current) return;
+    if (!enabled) return;
 
-    lastActivityRef.current = Date.now();
+    let running = true;
 
-    // Modulate pad frequency slightly based on cursor position
-    const baseFreq = 55;
-    const modulation = (cursorX * 0.5 + cursorY * 0.3) * 5;
-    padOscRef.current.frequency.setTargetAtTime(
-      baseFreq + modulation,
-      ctxRef.current.currentTime,
-      0.3
-    );
-  }, [enabled, cursorX, cursorY]);
+    const tick = () => {
+      if (!running) return;
 
-  // Idle detection: fade to silence after 10s, restore on activity
-  useEffect(() => {
-    if (!enabled || !masterGainRef.current || !ctxRef.current) return;
+      const ctx = ctxRef.current;
+      const pad1 = pad1Ref.current;
+      const master = masterGainRef.current;
 
-    const interval = setInterval(() => {
-      const elapsed = (Date.now() - lastActivityRef.current) / 1000;
-      if (elapsed > 10 && masterGainRef.current && ctxRef.current) {
-        masterGainRef.current.gain.setTargetAtTime(0.05, ctxRef.current.currentTime, 2.0);
-      } else if (masterGainRef.current && ctxRef.current) {
-        masterGainRef.current.gain.setTargetAtTime(0.4, ctxRef.current.currentTime, 0.5);
+      if (ctx && pad1 && master) {
+        // Cursor modulation
+        const { x, y } = cursorRef.current;
+        const baseFreq = 55;
+        const modulation = (x * 0.5 + y * 0.3) * 5;
+        pad1.frequency.setTargetAtTime(baseFreq + modulation, ctx.currentTime, 0.3);
+
+        // Idle detection
+        const elapsed = (Date.now() - lastActivityRef.current) / 1000;
+        if (elapsed > 10) {
+          master.gain.setTargetAtTime(0.05, ctx.currentTime, 2.0);
+        } else {
+          master.gain.setTargetAtTime(0.4, ctx.currentTime, 0.5);
+        }
       }
-    }, 1000);
 
-    return () => clearInterval(interval);
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      running = false;
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
   }, [enabled]);
 
   return null;
