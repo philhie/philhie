@@ -57,7 +57,7 @@
 - **Border radius:** None. Zero borders in the entire design. The void has no edges.
 - **Responsive:**
   - Desktop (>768px): Bottom-left overlay, generous margins, custom cursor active
-  - Mobile (<768px): Bottom-left overlay, tighter margins, no custom cursor, links may stack vertically
+  - Mobile (<768px): Bottom-left overlay, tighter margins, no custom cursor, links wrap with `gap: 0.75rem` (12px), 44px touch targets maintained
 
 ## Motion
 - **Approach:** Expressive (the entrance IS the product)
@@ -95,10 +95,11 @@
 ## Accessibility
 - **Screen readers:** All text content in DOM overlay (real HTML)
 - **Keyboard:** Standard tab navigation through links. focus-visible ring on links.
+- **Focus-visible ring:** `outline: 1px solid rgba(255, 255, 255, 0.5)`, `outline-offset: 2px`. Applies to links and sound toggle. Monochrome aesthetic, subtle but visible.
 - **Touch targets:** 44px minimum via padding on links
-- **Reduced motion:** Full bypass of all animation
+- **Reduced motion:** Full bypass of all animation. Live-updates if OS setting changes.
 - **WebGL fallback:** Static page with black background, name, tagline, links
-- **Canvas role:** `role="presentation"` (decorative)
+- **Canvas role:** `role="presentation"` + `aria-hidden="true"` (decorative)
 
 ## Custom Cursor (Desktop Only)
 - **Condition:** Only when `(pointer: fine)` matches

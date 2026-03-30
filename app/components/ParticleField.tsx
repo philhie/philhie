@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useMemo, useEffect, useState } from "react";
+import { useRef, useMemo, useEffect } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
@@ -149,9 +149,21 @@ const fragmentShader = /* glsl */ `
 
 // ─── Easing functions ────────────────────────────────────────
 
-function easeInCubic(t: number) { return t * t * t; }
-function easeOutQuad(t: number) { return 1 - (1 - t) * (1 - t); }
-function easeOutExpo(t: number) { return t === 1 ? 1 : 1 - Math.pow(2, -10 * t); }
+export function easeInCubic(t: number) { return t * t * t; }
+export function easeOutQuad(t: number) { return 1 - (1 - t) * (1 - t); }
+export function easeOutExpo(t: number) { return t === 1 ? 1 : 1 - Math.pow(2, -10 * t); }
+
+// ─── Shared PRNG (mulberry32) ───────────────────────────────
+
+export function createRng(seed: number) {
+  let s = seed;
+  return () => {
+    s |= 0; s = s + 0x6D2B79F5 | 0;
+    let t = Math.imul(s ^ s >>> 15, 1 | s);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
 
 // ─── Konami code targets (career timeline) ───────────────────
 // UPDATE WHEN CAREER CHANGES
@@ -160,15 +172,7 @@ function generateKonamiTargets(count: number): Float32Array {
   const targets = new Float32Array(count * 3);
   const clusterCount = KONAMI_LABELS.length;
   const particlesPerCluster = Math.floor(count / clusterCount);
-
-  // Seeded pseudo-random (mulberry32)
-  let seed = 137;
-  const rand = () => {
-    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
-    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
-    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
-  };
+  const rand = createRng(137);
 
   for (let c = 0; c < clusterCount; c++) {
     const cx = (c / (clusterCount - 1)) * 4 - 2;
@@ -185,11 +189,8 @@ function generateKonamiTargets(count: number): Float32Array {
 
 // ─── Time of day color ───────────────────────────────────────
 
-function getTimeOfDayColor(): THREE.Color {
+export function getTimeOfDayColor(): THREE.Color {
   const hour = new Date().getHours();
-  // Dawn/dusk (5-7, 17-19): warm amber
-  // Night (20-4): cool blue
-  // Day (8-16): neutral white
   if ((hour >= 5 && hour <= 7) || (hour >= 17 && hour <= 19)) {
     return new THREE.Color(0xfef3c7); // amber-100
   } else if (hour >= 20 || hour <= 4) {
@@ -198,28 +199,19 @@ function getTimeOfDayColor(): THREE.Color {
   return new THREE.Color(0xffffff); // white
 }
 
-// ─── Visit data ──────────────────────────────────────────────
-
-function getVisitData() {
-  try {
-    const key = "ph-visit";
-    const prev = localStorage.getItem(key);
-    const count = prev ? parseInt(prev, 10) + 1 : 1;
-    localStorage.setItem(key, String(count));
-    return { isReturning: count > 1, count };
-  } catch {
-    return { isReturning: false, count: 1 };
-  }
-}
-
 // ─── Component ───────────────────────────────────────────────
 
-export default function ParticleField({ count }: { count: number }) {
+export default function ParticleField({
+  count,
+  isReturning,
+}: {
+  count: number;
+  isReturning: boolean;
+}) {
   const pointsRef = useRef<THREE.Points>(null);
   const materialRef = useRef<THREE.ShaderMaterial>(null);
   const { invalidate } = useThree();
 
-  const [visitData] = useState(getVisitData);
   const idleTimer = useRef(0);
   const isFrozen = useRef(false);
   const cursorTarget = useRef(new THREE.Vector2(0, 0));
@@ -231,7 +223,7 @@ export default function ParticleField({ count }: { count: number }) {
   const konamiTimer = useRef(0);
 
   // Entrance duration based on returning visitor
-  const entranceDuration = visitData.isReturning ? 1.5 : 4.0;
+  const entranceDuration = isReturning ? 1.5 : 4.0;
   const phaseScale = 4.0 / entranceDuration;
 
   const geometry = useMemo(() => {
@@ -239,15 +231,7 @@ export default function ParticleField({ count }: { count: number }) {
     const positions = new Float32Array(count * 3);
     const speeds = new Float32Array(count);
     const sizes = new Float32Array(count);
-
-    // Seeded pseudo-random for determinism (mulberry32)
-    let seed = 42;
-    const rand = () => {
-      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
-      let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
-      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-      return ((t ^ t >>> 14) >>> 0) / 4294967296;
-    };
+    const rand = createRng(42);
 
     for (let i = 0; i < count; i++) {
       const theta = rand() * Math.PI * 2;
@@ -287,7 +271,6 @@ export default function ParticleField({ count }: { count: number }) {
   // Pointer events
   useEffect(() => {
     const onMove = (e: PointerEvent) => {
-      // Map screen coords to normalized [-1, 1]
       cursorTarget.current.set(
         (e.clientX / window.innerWidth) * 2 - 1,
         -(e.clientY / window.innerHeight) * 2 + 1
@@ -302,7 +285,6 @@ export default function ParticleField({ count }: { count: number }) {
 
     const onClick = () => {
       rippleStrength.current = 3;
-      // Haptic feedback on Android
       if (navigator.vibrate) {
         navigator.vibrate(10);
       }
@@ -422,7 +404,7 @@ export default function ParticleField({ count }: { count: number }) {
   // Expose konami trigger
   useEffect(() => {
     const handler = () => {
-      if (uniforms.uPhase.value < 3) return; // Only in aftermath
+      if (uniforms.uPhase.value < 3) return;
       konamiActive.current = true;
       konamiTimer.current = 0;
       konamiProgress.current = 0;

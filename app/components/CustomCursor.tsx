@@ -10,6 +10,7 @@ export default function CustomCursor() {
   const cursorRef = useRef<HTMLDivElement>(null);
   const hasFineMouse = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const [isOverLink, setIsOverLink] = useState(false);
+  const [hasMoved, setHasMoved] = useState(false);
 
   useEffect(() => {
     if (!hasFineMouse) return;
@@ -18,6 +19,7 @@ export default function CustomCursor() {
       if (cursorRef.current) {
         cursorRef.current.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
       }
+      if (!hasMoved) setHasMoved(true);
     };
 
     const onOver = (e: MouseEvent) => {
@@ -43,15 +45,17 @@ export default function CustomCursor() {
       window.removeEventListener("mouseover", onOver);
       window.removeEventListener("mouseout", onOut);
     };
-  }, [hasFineMouse]);
+  }, [hasFineMouse, hasMoved]);
 
   if (!hasFineMouse) return null;
 
   return (
     <>
-      <style jsx global>{`
-        * { cursor: ${isOverLink ? "pointer" : "none"} !important; }
-      `}</style>
+      {hasMoved && (
+        <style jsx global>{`
+          * { cursor: ${isOverLink ? "pointer" : "none"} !important; }
+        `}</style>
+      )}
       <div
         ref={cursorRef}
         style={{
@@ -64,7 +68,7 @@ export default function CustomCursor() {
           background: `radial-gradient(circle, rgba(255,255,255,${isOverLink ? 0.15 : 0.08}) 0%, transparent 70%)`,
           pointerEvents: "none",
           zIndex: 9999,
-          transform: "translate(-50%, -50%)",
+          transform: "translate(-100px, -100px)",
           transition: "width 0.2s, height 0.2s, background 0.2s",
           mixBlendMode: "screen",
         }}
