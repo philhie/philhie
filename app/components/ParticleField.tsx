@@ -9,7 +9,6 @@ import {
   uniform,
   float,
   vec2,
-  vec3,
   vec4,
   Fn,
   If,
@@ -17,18 +16,14 @@ import {
   mix,
   normalize,
   length,
-  abs,
-  floor,
-  max,
-  min,
-  step,
-  dot,
   exp,
   cos,
   sin,
   uv,
+  min,
 } from "three/tsl";
 import { PointsNodeMaterial } from "three/webgpu";
+import { mx_perlin_noise_float } from "three/src/nodes/materialx/lib/mx_noise.js";
 
 // ─── Easing functions ────────────────────────────────────────
 
@@ -81,83 +76,8 @@ export function getTimeOfDayColor(): THREE.Color {
   return new THREE.Color(0xffffff);
 }
 
-// ─── TSL Simplex Noise ───────────────────────────────────────
-// Port of Ashima/webgl-noise simplex3D to TSL
-
-const mod289_3 = Fn(([x]: [any]) => {
-  return x.sub(floor(x.mul(1.0 / 289.0)).mul(289.0));
-});
-
-const mod289_4 = Fn(([x]: [any]) => {
-  return x.sub(floor(x.mul(1.0 / 289.0)).mul(289.0));
-});
-
-const permute = Fn(([x]: [any]) => {
-  return mod289_4(x.mul(34.0).add(10.0).mul(x));
-});
-
-const taylorInvSqrt = Fn(([r]: [any]) => {
-  return float(1.79284291400159).sub(r.mul(0.85373472095314));
-});
-
-const snoise = Fn(([v]: [any]) => {
-  const C = vec2(1.0 / 6.0, 1.0 / 3.0);
-  const D = vec4(0.0, 0.5, 1.0, 2.0);
-
-  const i = floor(v.add(dot(v, vec3(C.y, C.y, C.y)))).toVar();
-  const x0 = v.sub(i).add(dot(i, vec3(C.x, C.x, C.x))).toVar();
-
-  const g = step(x0.yzx, x0.xyz);
-  const l = float(1.0).sub(g);
-  const i1 = min(g.xyz, l.zxy);
-  const i2 = max(g.xyz, l.zxy);
-
-  const x1 = x0.sub(i1).add(C.x);
-  const x2 = x0.sub(i2).add(C.y);
-  const x3 = x0.sub(D.y);
-
-  i.assign(mod289_3(i));
-  const p = permute(permute(permute(
-    i.z.add(vec4(0.0, i1.z, i2.z, 1.0)))
-    .add(i.y).add(vec4(0.0, i1.y, i2.y, 1.0)))
-    .add(i.x).add(vec4(0.0, i1.x, i2.x, 1.0)));
-
-  const n_ = float(0.142857142857);
-  const ns = n_.mul(D.wyz).sub(D.xzx);
-  const j = p.sub(floor(p.mul(ns.z).mul(ns.z)).mul(49.0));
-
-  const x_ = floor(j.mul(ns.z));
-  const y_ = floor(j.sub(x_.mul(7.0)));
-
-  const x = x_.mul(ns.x).add(ns.y);
-  const y = y_.mul(ns.x).add(ns.y);
-  const h = float(1.0).sub(abs(x)).sub(abs(y));
-
-  const b0 = vec4(x.xy, y.xy);
-  const b1 = vec4(x.zw, y.zw);
-  const s0 = floor(b0).mul(2.0).add(1.0);
-  const s1 = floor(b1).mul(2.0).add(1.0);
-  const sh = step(h, vec4(0.0, 0.0, 0.0, 0.0)).negate();
-
-  const a0 = b0.xzyw.add(s0.xzyw.mul(sh.xxyy));
-  const a1 = b1.xzyw.add(s1.xzyw.mul(sh.zzww));
-
-  const p0 = vec3(a0.xy, h.x);
-  const p1 = vec3(a0.zw, h.y);
-  const p2 = vec3(a1.xy, h.z);
-  const p3 = vec3(a1.zw, h.w);
-
-  const norm = taylorInvSqrt(vec4(dot(p0, p0), dot(p1, p1), dot(p2, p2), dot(p3, p3)));
-  const p0n = p0.mul(norm.x);
-  const p1n = p1.mul(norm.y);
-  const p2n = p2.mul(norm.z);
-  const p3n = p3.mul(norm.w);
-
-  const m = max(float(0.6).sub(vec4(dot(x0, x0), dot(x1, x1), dot(x2, x2), dot(x3, x3))), 0.0).toVar();
-  m.assign(m.mul(m));
-
-  return float(42.0).mul(dot(m.mul(m), vec4(dot(p0n, x0), dot(p1n, x1), dot(p2n, x2), dot(p3n, x3))));
-});
+// Use Three.js built-in perlin noise (has .setLayout() for GPU function compilation)
+const noise3f = (v: any) => mx_perlin_noise_float(v);
 
 // ─── Component ───────────────────────────────────────────────
 
@@ -256,9 +176,9 @@ export default function ParticleField({
 
         // Simplex noise drift
         const noisePos = pos.mul(0.5).add(uTime.mul(0.05).mul(aSpeed));
-        pos.x.addAssign(snoise(noisePos).mul(0.3));
-        pos.y.addAssign(snoise(noisePos.add(100.0)).mul(0.3));
-        pos.z.addAssign(snoise(noisePos.add(200.0)).mul(0.15));
+        pos.x.addAssign(noise3f(noisePos).mul(0.3));
+        pos.y.addAssign(noise3f(noisePos.add(100.0)).mul(0.3));
+        pos.z.addAssign(noise3f(noisePos.add(200.0)).mul(0.15));
 
         // Cursor displacement
         If(uCursorInfluence.greaterThan(0.01), () => {
@@ -277,7 +197,7 @@ export default function ParticleField({
         alpha.assign(mix(
           float(0.15),
           float(0.35),
-          snoise(pos.mul(2.0).add(uTime.mul(0.1))).mul(0.5).add(0.5)
+          noise3f(pos.mul(2.0).add(uTime.mul(0.1))).mul(0.5).add(0.5)
         ));
       });
 
