@@ -1,12 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef, useMemo, useSyncExternalStore } from "react";
-import { WebGPURenderer } from "three/webgpu";
-import { pass } from "three/addons/tsl/display/PassNode.js";
+import { WebGPURenderer, RenderPipeline } from "three/webgpu";
 import { bloom } from "three/addons/tsl/display/BloomNode.js";
-import { uniform, Fn, uv, vec2, float, vec4, length, hash } from "three/tsl";
-import { RenderPipeline } from "three/webgpu";
+import { uniform, Fn, uv, vec2, float, vec4, length, hash, pass } from "three/tsl";
 import ParticleField from "./ParticleField";
 
 // Responsive detection with live resize updates
@@ -57,7 +56,7 @@ function PostProcessing({ isDesktop }: { isDesktop: boolean }) {
     output = vignetteEffect(output);
     output = grainEffect(output, timeUniform);
 
-    const pipeline = new RenderPipeline(gl, output);
+    const pipeline = new RenderPipeline(gl as any, output);
     pipeline.outputColorTransform = true;
     pipelineRef.current = pipeline;
 
@@ -68,6 +67,7 @@ function PostProcessing({ isDesktop }: { isDesktop: boolean }) {
 
   // Override R3F's default render with our pipeline
   useFrame((_, delta) => {
+    // eslint-disable-next-line react-hooks/immutability
     timeUniform.value += delta;
     if (pipelineRef.current) {
       pipelineRef.current.render();
