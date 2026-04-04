@@ -3,149 +3,30 @@
 import { useRef, useMemo, useEffect } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-
-// ─── Inline GLSL ─────────────────────────────────────────────
-
-const vertexShader = /* glsl */ `
-  // Simplex noise (Ashima/webgl-noise)
-  vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-  vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-  vec4 permute(vec4 x) { return mod289(((x * 34.0) + 10.0) * x); }
-  vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
-
-  float snoise(vec3 v) {
-    const vec2 C = vec2(1.0 / 6.0, 1.0 / 3.0);
-    const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
-    vec3 i = floor(v + dot(v, C.yyy));
-    vec3 x0 = v - i + dot(i, C.xxx);
-    vec3 g = step(x0.yzx, x0.xyz);
-    vec3 l = 1.0 - g;
-    vec3 i1 = min(g.xyz, l.zxy);
-    vec3 i2 = max(g.xyz, l.zxy);
-    vec3 x1 = x0 - i1 + C.xxx;
-    vec3 x2 = x0 - i2 + C.yyy;
-    vec3 x3 = x0 - D.yyy;
-    i = mod289(i);
-    vec4 p = permute(permute(permute(
-      i.z + vec4(0.0, i1.z, i2.z, 1.0))
-      + i.y + vec4(0.0, i1.y, i2.y, 1.0))
-      + i.x + vec4(0.0, i1.x, i2.x, 1.0));
-    float n_ = 0.142857142857;
-    vec3 ns = n_ * D.wyz - D.xzx;
-    vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
-    vec4 x_ = floor(j * ns.z);
-    vec4 y_ = floor(j - 7.0 * x_);
-    vec4 x = x_ * ns.x + ns.yyyy;
-    vec4 y = y_ * ns.x + ns.yyyy;
-    vec4 h = 1.0 - abs(x) - abs(y);
-    vec4 b0 = vec4(x.xy, y.xy);
-    vec4 b1 = vec4(x.zw, y.zw);
-    vec4 s0 = floor(b0) * 2.0 + 1.0;
-    vec4 s1 = floor(b1) * 2.0 + 1.0;
-    vec4 sh = -step(h, vec4(0.0));
-    vec4 a0 = b0.xzyw + s0.xzyw * sh.xxyy;
-    vec4 a1 = b1.xzyw + s1.xzyw * sh.zzww;
-    vec3 p0 = vec3(a0.xy, h.x);
-    vec3 p1 = vec3(a0.zw, h.y);
-    vec3 p2 = vec3(a1.xy, h.z);
-    vec3 p3 = vec3(a1.zw, h.w);
-    vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)));
-    p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
-    vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
-    m = m * m;
-    return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
-  }
-
-  uniform float uTime;
-  uniform float uPhase; // 0=void, 1=bloom, 2=peak, 3=aftermath
-  uniform vec2 uCursor;
-  uniform float uCursorInfluence;
-  uniform float uKonami; // 0 or 1
-  uniform float uKonamiProgress; // 0..1 lerp to targets
-
-  attribute vec3 aBasePosition;
-  attribute float aSpeed;
-  attribute float aSize;
-  attribute vec3 aKonamiTarget;
-
-  varying float vAlpha;
-  varying float vSize;
-
-  void main() {
-    vec3 pos = aBasePosition;
-
-    // Phase-based motion
-    if (uPhase < 1.0) {
-      // Phase 0: Void - particles far out, invisible
-      pos *= 8.0;
-      vAlpha = 0.0;
-    } else if (uPhase < 2.0) {
-      // Phase 1: Bloom - coalesce inward (ease-in-cubic baked into uPhase)
-      float t = uPhase - 1.0;
-      float radius = mix(8.0, 1.0, t);
-      pos = normalize(pos) * radius;
-      // Spiral motion
-      float angle = uTime * aSpeed * 0.5 + length(pos);
-      pos.xz += vec2(cos(angle), sin(angle)) * 0.3 * (1.0 - t);
-      vAlpha = t * 0.4;
-    } else if (uPhase < 3.0) {
-      // Phase 2: Peak - bright, tight
-      float t = uPhase - 2.0;
-      pos = normalize(pos) * mix(1.0, 0.5, t);
-      vAlpha = mix(0.4, 0.6, t);
-    } else {
-      // Phase 3: Aftermath - disperse + drift
-      float disperseT = min((uPhase - 3.0) * 0.5, 1.0);
-      float baseRadius = mix(0.5, 2.5, disperseT);
-      pos = normalize(pos) * baseRadius;
-
-      // Simplex noise drift
-      vec3 noisePos = pos * 0.5 + uTime * 0.05 * aSpeed;
-      pos.x += snoise(noisePos) * 0.3;
-      pos.y += snoise(noisePos + 100.0) * 0.3;
-      pos.z += snoise(noisePos + 200.0) * 0.15;
-
-      // Cursor displacement
-      if (uCursorInfluence > 0.01) {
-        vec2 diff = pos.xy - uCursor;
-        float dist = length(diff);
-        float push = uCursorInfluence * 0.5 / (dist * dist + 0.5);
-        pos.xy += normalize(diff) * push;
-      }
-
-      // Konami mode: lerp to target positions
-      if (uKonami > 0.5) {
-        pos = mix(pos, aKonamiTarget, uKonamiProgress);
-      }
-
-      vAlpha = mix(0.15, 0.35, snoise(pos * 2.0 + uTime * 0.1) * 0.5 + 0.5);
-    }
-
-    vSize = aSize;
-
-    vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-    gl_Position = projectionMatrix * mvPosition;
-    gl_PointSize = aSize * (300.0 / -mvPosition.z);
-  }
-`;
-
-const fragmentShader = /* glsl */ `
-  uniform vec3 uColor;
-
-  varying float vAlpha;
-  varying float vSize;
-
-  void main() {
-    // Soft circle SDF with Gaussian falloff
-    vec2 center = gl_PointCoord - 0.5;
-    float dist = length(center);
-    float alpha = exp(-dist * dist * 8.0) * vAlpha;
-
-    if (alpha < 0.01) discard;
-
-    gl_FragColor = vec4(uColor, alpha);
-  }
-`;
+import {
+  uniform,
+  float,
+  vec2,
+  vec3,
+  vec4,
+  Fn,
+  If,
+  instancedBufferAttribute,
+  mix,
+  normalize,
+  length,
+  abs,
+  floor,
+  max,
+  min,
+  step,
+  dot,
+  exp,
+  cos,
+  sin,
+  uv,
+} from "three/tsl";
+import { PointsNodeMaterial } from "three/webgpu";
 
 // ─── Easing functions ────────────────────────────────────────
 
@@ -166,7 +47,6 @@ export function createRng(seed: number) {
 }
 
 // ─── Konami code targets (career timeline) ───────────────────
-// UPDATE WHEN CAREER CHANGES
 const KONAMI_LABELS = ["2015", "2022", "2022", "2023", "2025", "???"];
 function generateKonamiTargets(count: number): Float32Array {
   const targets = new Float32Array(count * 3);
@@ -192,12 +72,90 @@ function generateKonamiTargets(count: number): Float32Array {
 export function getTimeOfDayColor(): THREE.Color {
   const hour = new Date().getHours();
   if ((hour >= 5 && hour <= 7) || (hour >= 17 && hour <= 19)) {
-    return new THREE.Color(0xfef3c7); // amber-100
+    return new THREE.Color(0xfef3c7);
   } else if (hour >= 20 || hour <= 4) {
-    return new THREE.Color(0xdbeafe); // blue-100
+    return new THREE.Color(0xdbeafe);
   }
-  return new THREE.Color(0xffffff); // white
+  return new THREE.Color(0xffffff);
 }
+
+// ─── TSL Simplex Noise ───────────────────────────────────────
+// Port of Ashima/webgl-noise simplex3D to TSL
+
+const mod289_3 = Fn(([x]: [any]) => {
+  return x.sub(floor(x.mul(1.0 / 289.0)).mul(289.0));
+});
+
+const mod289_4 = Fn(([x]: [any]) => {
+  return x.sub(floor(x.mul(1.0 / 289.0)).mul(289.0));
+});
+
+const permute = Fn(([x]: [any]) => {
+  return mod289_4(x.mul(34.0).add(10.0).mul(x));
+});
+
+const taylorInvSqrt = Fn(([r]: [any]) => {
+  return float(1.79284291400159).sub(r.mul(0.85373472095314));
+});
+
+const snoise = Fn(([v]: [any]) => {
+  const C = vec2(1.0 / 6.0, 1.0 / 3.0);
+  const D = vec4(0.0, 0.5, 1.0, 2.0);
+
+  const i = floor(v.add(dot(v, vec3(C.y, C.y, C.y)))).toVar();
+  const x0 = v.sub(i).add(dot(i, vec3(C.x, C.x, C.x))).toVar();
+
+  const g = step(x0.yzx, x0.xyz);
+  const l = float(1.0).sub(g);
+  const i1 = min(g.xyz, l.zxy);
+  const i2 = max(g.xyz, l.zxy);
+
+  const x1 = x0.sub(i1).add(C.x);
+  const x2 = x0.sub(i2).add(C.y);
+  const x3 = x0.sub(D.y);
+
+  i.assign(mod289_3(i));
+  const p = permute(permute(permute(
+    i.z.add(vec4(0.0, i1.z, i2.z, 1.0)))
+    .add(i.y).add(vec4(0.0, i1.y, i2.y, 1.0)))
+    .add(i.x).add(vec4(0.0, i1.x, i2.x, 1.0)));
+
+  const n_ = float(0.142857142857);
+  const ns = n_.mul(D.wyz).sub(D.xzx);
+  const j = p.sub(floor(p.mul(ns.z).mul(ns.z)).mul(49.0));
+
+  const x_ = floor(j.mul(ns.z));
+  const y_ = floor(j.sub(x_.mul(7.0)));
+
+  const x = x_.mul(ns.x).add(ns.y);
+  const y = y_.mul(ns.x).add(ns.y);
+  const h = float(1.0).sub(abs(x)).sub(abs(y));
+
+  const b0 = vec4(x.xy, y.xy);
+  const b1 = vec4(x.zw, y.zw);
+  const s0 = floor(b0).mul(2.0).add(1.0);
+  const s1 = floor(b1).mul(2.0).add(1.0);
+  const sh = step(h, vec4(0.0, 0.0, 0.0, 0.0)).negate();
+
+  const a0 = b0.xzyw.add(s0.xzyw.mul(sh.xxyy));
+  const a1 = b1.xzyw.add(s1.xzyw.mul(sh.zzww));
+
+  const p0 = vec3(a0.xy, h.x);
+  const p1 = vec3(a0.zw, h.y);
+  const p2 = vec3(a1.xy, h.z);
+  const p3 = vec3(a1.zw, h.w);
+
+  const norm = taylorInvSqrt(vec4(dot(p0, p0), dot(p1, p1), dot(p2, p2), dot(p3, p3)));
+  const p0n = p0.mul(norm.x);
+  const p1n = p1.mul(norm.y);
+  const p2n = p2.mul(norm.z);
+  const p3n = p3.mul(norm.w);
+
+  const m = max(float(0.6).sub(vec4(dot(x0, x0), dot(x1, x1), dot(x2, x2), dot(x3, x3))), 0.0).toVar();
+  m.assign(m.mul(m));
+
+  return float(42.0).mul(dot(m.mul(m), vec4(dot(p0n, x0), dot(p1n, x1), dot(p2n, x2), dot(p3n, x3))));
+});
 
 // ─── Component ───────────────────────────────────────────────
 
@@ -208,8 +166,7 @@ export default function ParticleField({
   count: number;
   isReturning: boolean;
 }) {
-  const pointsRef = useRef<THREE.Points>(null);
-  const materialRef = useRef<THREE.ShaderMaterial>(null);
+  const spriteRef = useRef<THREE.Sprite>(null);
   const { invalidate } = useThree();
 
   const idleTimer = useRef(0);
@@ -222,12 +179,20 @@ export default function ParticleField({
   const konamiProgress = useRef(0);
   const konamiTimer = useRef(0);
 
-  // Entrance duration based on returning visitor
   const entranceDuration = isReturning ? 1.5 : 4.0;
   const phaseScale = 4.0 / entranceDuration;
 
-  const geometry = useMemo(() => {
-    const geo = new THREE.BufferGeometry();
+  // TSL uniforms
+  const uTime = useMemo(() => uniform(0.0), []);
+  const uPhase = useMemo(() => uniform(0.0), []);
+  const uCursor = useMemo(() => uniform(new THREE.Vector2(0, 0)), []);
+  const uCursorInfluence = useMemo(() => uniform(0.0), []);
+  const uColor = useMemo(() => uniform(getTimeOfDayColor()), []);
+  const uKonami = useMemo(() => uniform(0.0), []);
+  const uKonamiProgress = useMemo(() => uniform(0.0), []);
+
+  // Instanced attributes + material
+  const sprite = useMemo(() => {
     const positions = new Float32Array(count * 3);
     const speeds = new Float32Array(count);
     const sizes = new Float32Array(count);
@@ -246,27 +211,102 @@ export default function ParticleField({
 
     const konamiTargets = generateKonamiTargets(count);
 
-    geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    geo.setAttribute("aBasePosition", new THREE.BufferAttribute(positions.slice(), 3));
-    geo.setAttribute("aSpeed", new THREE.BufferAttribute(speeds, 1));
-    geo.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
-    geo.setAttribute("aKonamiTarget", new THREE.BufferAttribute(konamiTargets, 3));
+    const posAttr = new THREE.InstancedBufferAttribute(positions, 3);
+    const speedAttr = new THREE.InstancedBufferAttribute(speeds, 1);
+    const sizeAttr = new THREE.InstancedBufferAttribute(sizes, 1);
+    const konamiAttr = new THREE.InstancedBufferAttribute(konamiTargets, 3);
 
-    return geo;
-  }, [count]);
+    const aBasePosition = instancedBufferAttribute(posAttr);
+    const aSpeed = instancedBufferAttribute(speedAttr);
+    const aSize = instancedBufferAttribute(sizeAttr);
+    const aKonamiTarget = instancedBufferAttribute(konamiAttr);
 
-  const uniforms = useMemo(
-    () => ({
-      uTime: { value: 0 },
-      uPhase: { value: 0 },
-      uCursor: { value: new THREE.Vector2(0, 0) },
-      uCursorInfluence: { value: 0 },
-      uColor: { value: getTimeOfDayColor() },
-      uKonami: { value: 0 },
-      uKonamiProgress: { value: 0 },
-    }),
-    []
-  );
+    // Position node: phase-based motion logic
+    const positionNode = Fn(() => {
+      const pos = aBasePosition.toVar();
+      const alpha = float(0.0).toVar();
+
+      If(uPhase.lessThan(1.0), () => {
+        // Phase 0: Void
+        pos.assign(pos.mul(8.0));
+        alpha.assign(0.0);
+      }).ElseIf(uPhase.lessThan(2.0), () => {
+        // Phase 1: Bloom - coalesce inward
+        const t = uPhase.sub(1.0);
+        const radius = mix(float(8.0), float(1.0), t);
+        pos.assign(normalize(pos).mul(radius));
+        // Spiral motion
+        const angle = uTime.mul(aSpeed).mul(0.5).add(length(pos));
+        const spiralScale = float(0.3).mul(float(1.0).sub(t));
+        pos.x.addAssign(cos(angle).mul(spiralScale));
+        pos.z.addAssign(sin(angle).mul(spiralScale));
+        alpha.assign(t.mul(0.4));
+      }).ElseIf(uPhase.lessThan(3.0), () => {
+        // Phase 2: Peak - bright, tight
+        const t = uPhase.sub(2.0);
+        pos.assign(normalize(pos).mul(mix(float(1.0), float(0.5), t)));
+        alpha.assign(mix(float(0.4), float(0.6), t));
+      }).Else(() => {
+        // Phase 3: Aftermath - disperse + drift
+        const disperseT = min(uPhase.sub(3.0).mul(0.5), 1.0);
+        const baseRadius = mix(float(0.5), float(2.5), disperseT);
+        pos.assign(normalize(pos).mul(baseRadius));
+
+        // Simplex noise drift
+        const noisePos = pos.mul(0.5).add(uTime.mul(0.05).mul(aSpeed));
+        pos.x.addAssign(snoise(noisePos).mul(0.3));
+        pos.y.addAssign(snoise(noisePos.add(100.0)).mul(0.3));
+        pos.z.addAssign(snoise(noisePos.add(200.0)).mul(0.15));
+
+        // Cursor displacement
+        If(uCursorInfluence.greaterThan(0.01), () => {
+          const diff = pos.xy.sub(uCursor);
+          const dist = length(diff);
+          const push = uCursorInfluence.mul(0.5).div(dist.mul(dist).add(0.5));
+          pos.x.addAssign(normalize(diff).x.mul(push));
+          pos.y.addAssign(normalize(diff).y.mul(push));
+        });
+
+        // Konami mode
+        If(uKonami.greaterThan(0.5), () => {
+          pos.assign(mix(pos, aKonamiTarget, uKonamiProgress));
+        });
+
+        alpha.assign(mix(
+          float(0.15),
+          float(0.35),
+          snoise(pos.mul(2.0).add(uTime.mul(0.1))).mul(0.5).add(0.5)
+        ));
+      });
+
+      return vec4(pos, alpha);
+    })();
+
+    // Soft circle alpha with Gaussian falloff
+    const alphaNode = Fn(() => {
+      const center = uv().sub(vec2(0.5, 0.5));
+      const dist = length(center);
+      return exp(dist.mul(dist).mul(-8.0));
+    })();
+
+    const mat = new PointsNodeMaterial({
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      sizeAttenuation: true,
+    } as any);
+
+    // Use the xyz of positionNode for position, w for alpha
+    mat.positionNode = positionNode.xyz;
+    mat.colorNode = vec4(uColor, positionNode.w.mul(alphaNode));
+    mat.sizeNode = aSize.mul(float(300.0 / 5.0));
+
+    const s = new THREE.Sprite(mat);
+    s.count = count;
+    s.frustumCulled = false;
+
+    return s;
+  }, [count, uTime, uPhase, uCursor, uCursorInfluence, uColor, uKonami, uKonamiProgress]);
 
   // Pointer events
   useEffect(() => {
@@ -332,38 +372,35 @@ export default function ParticleField({
 
   // Animation loop
   useFrame((_, delta) => {
-    if (!materialRef.current) return;
-
-    const u = materialRef.current.uniforms;
-    u.uTime.value += delta;
-    const elapsed = u.uTime.value;
+    uTime.value += delta;
+    const elapsed = uTime.value;
 
     // Phase transitions with easing
     if (elapsed < 0.8 * (1 / phaseScale)) {
-      u.uPhase.value = 0;
+      uPhase.value = 0;
     } else if (elapsed < 2.5 * (1 / phaseScale)) {
       const t = (elapsed - 0.8 / phaseScale) / (1.7 / phaseScale);
-      u.uPhase.value = 1 + easeInCubic(Math.min(t, 1));
+      uPhase.value = 1 + easeInCubic(Math.min(t, 1));
     } else if (elapsed < 4.0 * (1 / phaseScale)) {
       const t = (elapsed - 2.5 / phaseScale) / (1.5 / phaseScale);
-      u.uPhase.value = 2 + easeOutQuad(Math.min(t, 1));
+      uPhase.value = 2 + easeOutQuad(Math.min(t, 1));
     } else {
       const t = (elapsed - 4.0 / phaseScale) / 2.0;
-      u.uPhase.value = 3 + easeOutExpo(Math.min(t, 1));
+      uPhase.value = 3 + easeOutExpo(Math.min(t, 1));
     }
 
     // Cursor lerp (0.15s lag)
     const lerpFactor = 1 - Math.pow(0.001, delta);
     cursorCurrent.current.lerp(cursorTarget.current, lerpFactor);
-    u.uCursor.value.copy(cursorCurrent.current);
+    uCursor.value.copy(cursorCurrent.current);
 
     // Cursor influence decay
     const targetInfluence = cursorInfluence.current;
-    u.uCursorInfluence.value += (targetInfluence - u.uCursorInfluence.value) * lerpFactor;
+    uCursorInfluence.value += (targetInfluence - uCursorInfluence.value) * lerpFactor;
 
     // Ripple decay
     if (rippleStrength.current > 0) {
-      u.uCursorInfluence.value += rippleStrength.current;
+      uCursorInfluence.value += rippleStrength.current;
       rippleStrength.current *= 0.9;
       if (rippleStrength.current < 0.01) rippleStrength.current = 0;
     }
@@ -380,31 +417,30 @@ export default function ParticleField({
           konamiProgress.current = 0;
         }
       }
-      u.uKonami.value = 1;
-      u.uKonamiProgress.value = konamiProgress.current;
+      uKonami.value = 1;
+      uKonamiProgress.value = konamiProgress.current;
     } else {
-      u.uKonami.value = 0;
-      u.uKonamiProgress.value = 0;
+      uKonami.value = 0;
+      uKonamiProgress.value = 0;
     }
 
-    // Idle detection: freeze after 10s
-    if (u.uPhase.value >= 3) {
+    // Idle detection
+    if (uPhase.value >= 3) {
       idleTimer.current += delta;
       if (idleTimer.current > 10 && !isFrozen.current) {
         isFrozen.current = true;
       }
     }
 
-    // Don't stop the render loop during entrance
     if (!isFrozen.current) {
       invalidate();
     }
   });
 
-  // Expose konami trigger
+  // Konami trigger
   useEffect(() => {
     const handler = () => {
-      if (uniforms.uPhase.value < 3) return;
+      if (uPhase.value < 3) return;
       konamiActive.current = true;
       konamiTimer.current = 0;
       konamiProgress.current = 0;
@@ -416,19 +452,7 @@ export default function ParticleField({
     };
     window.addEventListener("konami", handler);
     return () => window.removeEventListener("konami", handler);
-  }, [uniforms, invalidate]);
+  }, [uPhase, invalidate]);
 
-  return (
-    <points ref={pointsRef} geometry={geometry} frustumCulled={false}>
-      <shaderMaterial
-        ref={materialRef}
-        vertexShader={vertexShader}
-        fragmentShader={fragmentShader}
-        uniforms={uniforms}
-        transparent
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-      />
-    </points>
-  );
+  return <primitive ref={spriteRef} object={sprite} />;
 }
