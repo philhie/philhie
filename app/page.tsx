@@ -6,6 +6,7 @@ import SoundToggle from "./components/SoundToggle";
 import SoundEngine from "./components/SoundEngine";
 import CustomCursor from "./components/CustomCursor";
 import Overlay from "./components/Overlay";
+import SceneErrorBoundary from "./components/SceneErrorBoundary";
 
 const Scene = dynamic(() => import("./components/Scene"), { ssr: false });
 
@@ -107,7 +108,7 @@ export default function Home() {
 
   const handleSceneReady = useCallback(() => setSceneReady(true), []);
   const handleContextLost = useCallback(() => setWebglFailed(true), []);
-  const toggleSound = useCallback(() => setSoundEnabled(true), []);
+  const toggleSound = useCallback(() => setSoundEnabled(prev => !prev), []);
 
   // Static fallback for WebGL failure
   if (webglFailed) {
@@ -123,11 +124,13 @@ export default function Home() {
 
       {/* WebGL Scene */}
       {!reducedMotion && (
-        <Scene
-          onReady={handleSceneReady}
-          onContextLost={handleContextLost}
-          isReturning={visitData.isReturning}
-        />
+        <SceneErrorBoundary>
+          <Scene
+            onReady={handleSceneReady}
+            onContextLost={handleContextLost}
+            isReturning={visitData.isReturning}
+          />
+        </SceneErrorBoundary>
       )}
 
       {/* Reduced motion: static particle-like background */}

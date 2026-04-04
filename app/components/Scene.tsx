@@ -1,7 +1,6 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { PerformanceMonitor } from "@react-three/drei";
 import {
   EffectComposer,
   Bloom,
@@ -10,11 +9,9 @@ import {
   ChromaticAberration,
 } from "@react-three/postprocessing";
 import { BlendFunction } from "postprocessing";
-import { useState, useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useSyncExternalStore } from "react";
 import { Vector2 } from "three";
 import ParticleField from "./ParticleField";
-
-type QualityTier = "high" | "medium" | "low";
 
 // Responsive detection with live resize updates
 function subscribeDesktop(callback: () => void) {
@@ -43,8 +40,6 @@ export default function Scene({
   onContextLost?: () => void;
   isReturning: boolean;
 }) {
-  const [quality, setQuality] = useState<QualityTier>("high");
-
   const isDesktop = useSyncExternalStore(
     subscribeDesktop,
     getDesktopSnapshot,
@@ -55,34 +50,12 @@ export default function Scene({
     onReady?.();
   }, [onReady]);
 
-  const handleDecline = useCallback(() => {
-    setQuality((prev) => {
-      if (prev === "high") return "medium";
-      if (prev === "medium") return "low";
-      return "low";
-    });
-  }, []);
-
-  const handleIncline = useCallback(() => {
-    setQuality((prev) => {
-      if (prev === "low") return "medium";
-      if (prev === "medium") return "high";
-      return "high";
-    });
-  }, []);
-
-  const particleCount =
-    quality === "high" ? (isDesktop ? 2000 : 800) :
-    quality === "medium" ? (isDesktop ? 800 : 400) :
-    400;
-
-  const showBloom = quality !== "low";
-  const showChromatic = isDesktop && quality === "high";
-  const chromaOffset = useMemo(() => showChromatic ? CHROMA_OFFSET : CHROMA_ZERO, [showChromatic]);
+  const particleCount = isDesktop ? 3000 : 1200;
+  const chromaOffset = useMemo(() => isDesktop ? CHROMA_OFFSET : CHROMA_ZERO, [isDesktop]);
 
   return (
     <Canvas
-      dpr={[1, 1.5]}
+      dpr={[1, 2]}
       gl={{
         antialias: false,
         powerPreference: "high-performance",
@@ -100,33 +73,26 @@ export default function Scene({
         });
       }}
     >
-      <PerformanceMonitor
-        onDecline={handleDecline}
-        onIncline={handleIncline}
-        flipflops={3}
-        onFallback={() => setQuality("low")}
-      >
-        <ParticleField count={particleCount} isReturning={isReturning} />
-        <EffectComposer>
-          <Bloom
-            intensity={showBloom ? (isDesktop ? 1.5 : 0.8) : 0}
-            luminanceThreshold={0.3}
-            luminanceSmoothing={0.9}
-            mipmapBlur
-          />
-          <ChromaticAberration
-            offset={chromaOffset}
-            blendFunction={BlendFunction.NORMAL}
-            radialModulation={false}
-            modulationOffset={0}
-          />
-          <Vignette darkness={0.7} offset={0.3} />
-          <Noise
-            blendFunction={BlendFunction.SOFT_LIGHT}
-            opacity={0.15}
-          />
-        </EffectComposer>
-      </PerformanceMonitor>
+      <ParticleField count={particleCount} isReturning={isReturning} />
+      <EffectComposer>
+        <Bloom
+          intensity={isDesktop ? 1.8 : 1.0}
+          luminanceThreshold={0.2}
+          luminanceSmoothing={0.9}
+          mipmapBlur
+        />
+        <ChromaticAberration
+          offset={chromaOffset}
+          blendFunction={BlendFunction.NORMAL}
+          radialModulation={false}
+          modulationOffset={0}
+        />
+        <Vignette darkness={0.7} offset={0.3} />
+        <Noise
+          blendFunction={BlendFunction.SOFT_LIGHT}
+          opacity={0.15}
+        />
+      </EffectComposer>
     </Canvas>
   );
 }
