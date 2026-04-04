@@ -1,11 +1,16 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useRef, useMemo, useSyncExternalStore } from "react";
-import { WebGPURenderer, RenderPipeline } from "three/webgpu";
-import { bloom } from "three/addons/tsl/display/BloomNode.js";
-import { uniform, Fn, uv, vec2, float, vec4, length, hash, pass } from "three/tsl";
+import { Canvas } from "@react-three/fiber";
+import {
+  EffectComposer,
+  Bloom,
+  Vignette,
+  Noise,
+  ChromaticAberration,
+} from "@react-three/postprocessing";
+import { BlendFunction } from "postprocessing";
+import { useEffect, useMemo, useSyncExternalStore } from "react";
+import { Vector2 } from "three";
 import ParticleField from "./ParticleField";
 
 // Responsive detection with live resize updates
@@ -22,60 +27,9 @@ function getDesktopServerSnapshot() {
   return true;
 }
 
-// Vignette effect as TSL function
-const vignetteEffect = Fn(([color]: [any]) => {
-  const center = uv().sub(vec2(0.5, 0.5));
-  const dist = length(center);
-  const vignette = float(1.0).sub(dist.mul(1.4).pow(2.0).mul(0.7));
-  return color.mul(vec4(vignette, vignette, vignette, 1.0));
-});
-
-// Film grain as TSL function
-const grainEffect = Fn(([color, time]: [any, any]) => {
-  const noiseUV = uv().mul(vec2(1920.0, 1080.0)).add(time.mul(100.0));
-  const noise = hash(noiseUV.x.add(noiseUV.y.mul(314.159)));
-  const grain = noise.sub(0.5).mul(0.15);
-  return color.add(vec4(grain, grain, grain, 0.0));
-});
-
-// Postprocessing setup component — runs inside the Canvas
-function PostProcessing({ isDesktop }: { isDesktop: boolean }) {
-  const { scene, camera, gl } = useThree();
-  const pipelineRef = useRef<any>(null);
-  const timeUniform = useMemo(() => uniform(0.0), []);
-
-  useEffect(() => {
-    const scenePass = pass(scene, camera);
-    const sceneColor = scenePass.getTextureNode("output");
-
-    // Bloom
-    const bloomPass = bloom(sceneColor, isDesktop ? 1.5 : 0.8, 0.5, 0.3);
-
-    // Chain: scene + bloom → vignette → grain
-    let output = sceneColor.add(bloomPass);
-    output = vignetteEffect(output);
-    output = grainEffect(output, timeUniform);
-
-    const pipeline = new RenderPipeline(gl as any, output);
-    pipeline.outputColorTransform = true;
-    pipelineRef.current = pipeline;
-
-    return () => {
-      pipeline.dispose();
-    };
-  }, [scene, camera, gl, isDesktop, timeUniform]);
-
-  // Override R3F's default render with our pipeline
-  useFrame((_, delta) => {
-    // eslint-disable-next-line react-hooks/immutability
-    timeUniform.value += delta;
-    if (pipelineRef.current) {
-      pipelineRef.current.render();
-    }
-  }, 1); // priority 1 = runs after default (which we skip)
-
-  return null;
-}
+// Memoized Vector2 instances
+const CHROMA_OFFSET = new Vector2(0.0005, 0.0005);
+const CHROMA_ZERO = new Vector2(0, 0);
 
 export default function Scene({
   onReady,
@@ -96,23 +50,18 @@ export default function Scene({
     onReady?.();
   }, [onReady]);
 
-  const particleCount = isDesktop ? 2000 : 800;
+  const particleCount = isDesktop ? 3000 : 1200;
+  const chromaOffset = useMemo(() => isDesktop ? CHROMA_OFFSET : CHROMA_ZERO, [isDesktop]);
 
   return (
     <Canvas
       dpr={[1, 2]}
-      gl={async (props) => {
-        const renderer = new WebGPURenderer({
-          canvas: props.canvas,
-          antialias: false,
-          alpha: false,
-          powerPreference: "high-performance",
-        } as any);
-        await renderer.init();
-        return renderer as any;
+      gl={{
+        antialias: false,
+        powerPreference: "high-performance",
+        alpha: false,
       }}
       camera={{ position: [0, 0, 5], fov: 60 }}
-      frameloop="always"
       style={{ position: "fixed", inset: 0, zIndex: 0 }}
       role="presentation"
       aria-hidden="true"
@@ -125,7 +74,25 @@ export default function Scene({
       }}
     >
       <ParticleField count={particleCount} isReturning={isReturning} />
-      <PostProcessing isDesktop={isDesktop} />
+      <EffectComposer>
+        <Bloom
+          intensity={isDesktop ? 1.8 : 1.0}
+          luminanceThreshold={0.2}
+          luminanceSmoothing={0.9}
+          mipmapBlur
+        />
+        <ChromaticAberration
+          offset={chromaOffset}
+          blendFunction={BlendFunction.NORMAL}
+          radialModulation={false}
+          modulationOffset={0}
+        />
+        <Vignette darkness={0.7} offset={0.3} />
+        <Noise
+          blendFunction={BlendFunction.SOFT_LIGHT}
+          opacity={0.15}
+        />
+      </EffectComposer>
     </Canvas>
   );
 }
