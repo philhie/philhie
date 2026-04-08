@@ -7,6 +7,8 @@ import * as THREE from "three";
 // ─── Inline GLSL ─────────────────────────────────────────────
 
 const vertexShader = /* glsl */ `
+  precision highp float;
+
   // Simplex noise (Ashima/webgl-noise)
   vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
   vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
@@ -130,6 +132,8 @@ const vertexShader = /* glsl */ `
 `;
 
 const fragmentShader = /* glsl */ `
+  precision highp float;
+
   uniform vec3 uColor;
 
   varying float vAlpha;

@@ -9,9 +9,10 @@ describe("SoundToggle", () => {
     expect(screen.getByText("listen")).toBeInTheDocument();
   });
 
-  it("renders nothing when enabled", () => {
-    const { container } = render(<SoundToggle enabled={true} onToggle={() => {}} />);
-    expect(container.firstChild).toBeNull();
+  it("renders 'listening' button when enabled", () => {
+    render(<SoundToggle enabled={true} onToggle={() => {}} />);
+    expect(screen.getByRole("button", { name: /disable sound/i })).toBeInTheDocument();
+    expect(screen.getByText("listening")).toBeInTheDocument();
   });
 
   it("calls onToggle when clicked", () => {
