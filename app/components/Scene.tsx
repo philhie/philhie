@@ -10,7 +10,7 @@ import {
 } from "@react-three/postprocessing";
 import { BlendFunction } from "postprocessing";
 import { useEffect, useMemo, useSyncExternalStore } from "react";
-import { Vector2 } from "three";
+import { FloatType, Vector2 } from "three";
 import ParticleField from "./ParticleField";
 
 // Responsive detection with live resize updates
@@ -74,12 +74,13 @@ export default function Scene({
       }}
     >
       <ParticleField count={particleCount} isReturning={isReturning} />
-      <EffectComposer>
+      <EffectComposer frameBufferType={FloatType}>
         <Bloom
-          intensity={isDesktop ? 1.8 : 1.0}
+          intensity={isDesktop ? 1.6 : 0.9}
           luminanceThreshold={0.2}
-          luminanceSmoothing={0.9}
+          luminanceSmoothing={0.3}
           mipmapBlur
+          resolutionScale={isDesktop ? 1.0 : 0.5}
         />
         <ChromaticAberration
           offset={chromaOffset}
