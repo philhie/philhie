@@ -113,7 +113,7 @@
 | 2026-03-27 | Initial design system | Created by /design-consultation from /office-hours + CEO + eng + design review decisions |
 | 2026-03-27 | Monochrome + time-of-day | Pure B&W with adaptive temperature. Monochrome = serious. Temperature = alive. |
 | 2026-03-27 | Geist Sans monumental | No new font needed. Scale + weight + tracking make Geist feel monumental. Zero extra bytes. |
-| 2026-03-27 | "Building." one word | Maximum mystery. Makes people Google you. |
+| 2026-03-27 | "Just doing things." | Maximum mystery. Makes people Google you. |
 | 2026-03-27 | Bottom-left overlay | Gallery-label positioning. The experience is art. The name is the label. |
 | 2026-03-27 | "listen" toggle | Invitation, not button. Disappears when enabled. |
 | 2026-03-27 | Points-based particles | Single draw call. Same visual as instanced meshes for soft circles. |
