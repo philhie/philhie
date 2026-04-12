@@ -40,7 +40,7 @@ export default function Overlay({ visible }: { visible: boolean }) {
             marginTop: "0.75rem",
           }}
         >
-          Building.
+          Just doing things.
         </p>
 
         <div

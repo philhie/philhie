@@ -6,7 +6,7 @@ describe("Overlay", () => {
   it("renders name, tagline, and links", () => {
     render(<Overlay visible={true} />);
     expect(screen.getByText("Phil Hie")).toBeInTheDocument();
-    expect(screen.getByText("Building.")).toBeInTheDocument();
+    expect(screen.getByText("Just doing things.")).toBeInTheDocument();
     expect(screen.getByText("GitHub")).toBeInTheDocument();
     expect(screen.getByText("LinkedIn")).toBeInTheDocument();
   });

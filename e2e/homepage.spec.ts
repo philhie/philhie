@@ -6,7 +6,7 @@ test.describe("Homepage", () => {
 
     // Wait for overlay to become visible (up to 5s for first visit)
     await expect(page.locator("h1")).toContainText("Phil Hie", { timeout: 6000 });
-    await expect(page.locator("text=Building.")).toBeVisible({ timeout: 6000 });
+    await expect(page.locator("text=Just doing things.")).toBeVisible({ timeout: 6000 });
 
     // Links are present
     await expect(page.locator('a[href*="github.com/philhie"]')).toBeVisible();

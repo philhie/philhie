@@ -26,8 +26,8 @@ export const metadata: Metadata = {
     default: "Phil Hie",
     template: "%s · Phil Hie",
   },
-  description: "Phil Hie. Building.",
-  keywords: ["Phil Hie", "building", "technology", "founder"],
+  description: "Phil Hie. Just doing things.",
+  keywords: ["Phil Hie", "technology", "founder"],
   authors: [{ name: "Phil Hie", url: "https://philhie.com" }],
   creator: "Phil Hie",
   openGraph: {
@@ -35,13 +35,13 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://philhie.com",
     title: "Phil Hie",
-    description: "Building.",
+    description: "Just doing things.",
     siteName: "Phil Hie",
   },
   twitter: {
     card: "summary_large_image",
     title: "Phil Hie",
-    description: "Building.",
+    description: "Just doing things.",
     creator: "@philhie",
   },
   icons: {
