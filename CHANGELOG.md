@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0.1] - 2026-04-12
+
+### Changed
+- Tagline updated from "Building." to "Just doing things." across site, metadata, and tests
+- Removed "building" from SEO keywords
+
 ## [0.1.0.0] - 2026-04-08
 
 ### Changed
