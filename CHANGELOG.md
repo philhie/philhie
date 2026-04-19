@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0.4] - 2026-04-19
+
+### Fixed
+- Profile README widgets (streak, activity graph) forced to dark background (`#0d1117`) so the white numbers, labels, and lines are actually visible regardless of the viewer's GitHub light/dark theme. Previously everything was transparent + white, which rendered as invisible white-on-white in light mode.
+- Snake contribution graph wrapped in a `<picture>` element so it swaps between the monochrome dark variant and GitHub's classic green light variant depending on the viewer's theme.
+- Streak "Total Contributions / Longest Streak" side labels nudged to `#a3a3a3` (from `#737373`) so they sit at the right contrast level on the new dark background.
+
 ## [0.1.0.3] - 2026-04-19
 
 ### Changed
