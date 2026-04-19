@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0.3] - 2026-04-19
+
+### Changed
+- Replaced Next.js boilerplate README with a GitHub profile composition. Since this repo doubles as the `philhie/philhie` profile repo, the README now renders on Phil's public profile: hero banner → streak widget → snake contribution graph → activity graph → three minimal links. Konami + career-year Easter eggs embedded as HTML comments.
+
+### Added
+- `.github/workflows/snake.yml` — daily cron (every 12h) using `Platane/snk/svg-only@v3` to generate a monochrome snake contribution graph, committed to an `output` branch as `github-snake.svg` and `github-snake-dark.svg`.
+
 ## [0.1.0.2] - 2026-04-19
 
 ### Added
