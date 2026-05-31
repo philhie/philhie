@@ -22,7 +22,7 @@ npm run lint    # eslint
 
 ## Architecture
 - `app/page.tsx` — Main page: dynamic canvas import + DOM overlay + Konami listener
-- `app/components/Scene.tsx` — R3F Canvas + PerformanceMonitor + postprocessing
+- `app/components/Scene.tsx` — R3F Canvas (on-demand frameloop) + postprocessing (Bloom/Vignette/Noise)
 - `app/components/ParticleField.tsx` — Points + inline shaders + entrance + interaction
 - `app/components/SoundEngine.tsx` — Web Audio API synthesizer (lazy, opt-in)
 - `app/components/SoundToggle.tsx` — "listen" toggle button

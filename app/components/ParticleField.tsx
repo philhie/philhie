@@ -334,9 +334,20 @@ export default function ParticleField({
     };
   }, [invalidate]);
 
+  // Kick off the first frame. Under frameloop="demand" the loop is driven by
+  // invalidate() calls inside useFrame; this guarantees it starts on mount.
+  useEffect(() => {
+    invalidate();
+  }, [invalidate]);
+
   // Animation loop
   useFrame((_, delta) => {
-    if (!materialRef.current) return;
+    // Material ref may not be attached on the very first demand frame — keep
+    // the loop alive (invalidate) instead of returning, or it would stall.
+    if (!materialRef.current) {
+      invalidate();
+      return;
+    }
 
     const u = materialRef.current.uniforms;
     u.uTime.value += delta;
@@ -399,7 +410,10 @@ export default function ParticleField({
       }
     }
 
-    // Don't stop the render loop during entrance
+    // INVARIANT (frameloop="demand"): the loop is kept alive solely by this
+    // self-invalidate. Every non-frozen exit path of this useFrame MUST reach
+    // an invalidate() — any early `return` added above this line before the
+    // material-ref guard would silently and permanently stop the animation.
     if (!isFrozen.current) {
       invalidate();
     }

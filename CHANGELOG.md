@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0.5] - 2026-05-31
+
+### Fixed
+- The WebGL scene now actually rests when idle. The canvas was rendering the full postprocessing chain at 60fps forever (the frame loop defaulted to "always", so the documented freeze-on-idle never took effect). It now renders on demand — through the entrance and while you interact — and stops after 10s of stillness. This removes the runaway main-thread/GPU work behind the sluggish interactivity (Interaction to Next Paint ~832ms) and battery drain seen in Speed Insights.
+- The name "Phil Hie" now appears on schedule. It is the largest thing on screen, and on real visits it was taking up to ~25s to paint because heavy scene startup was starving the reveal timer (Largest Contentful Paint ~25s). Trimming the per-frame work frees the main thread so the name reveals with the entrance (~3s) as intended.
+
+### Changed
+- Lighter, smoother render path: device-pixel-ratio capped at 1.5, bloom now uses a half-float buffer, and particle density set to the design spec (2000 desktop / 800 mobile).
+- First-visit name reveal tightened to 3.0s (0.5s after the reveal phase begins), matching the design system.
+- Bloom intensity and threshold set to the design-system values (1.5 / 0.8 intensity, 0.3 threshold).
+
+### Removed
+- Chromatic aberration postprocessing pass — it was not part of the design system, and dropping it further lightens each frame.
+
 ## [0.1.0.4] - 2026-04-19
 
 ### Fixed
