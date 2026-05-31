@@ -72,10 +72,13 @@ export default function Home() {
     }
   }, [reducedMotion]);
 
-  // Show overlay after entrance (4s for first visit, earlier for returning)
+  // Show overlay after the entrance. DESIGN.md: text fades in 0.5s after the
+  // reveal phase begins (2.5s) → 3.0s first visit; returning visitors get the
+  // compressed 1.5s entrance. This timing also gates LCP (the <h1> is the
+  // largest contentful element), so it is kept as tight as the design allows.
   useEffect(() => {
     if (reducedMotion) return;
-    const delay = visitData.isReturning ? 1000 : 3500;
+    const delay = visitData.isReturning ? 1000 : 3000;
     const timer = setTimeout(() => setShowOverlay(true), delay);
     return () => clearTimeout(timer);
   }, [reducedMotion, visitData.isReturning]);

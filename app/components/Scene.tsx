@@ -6,11 +6,10 @@ import {
   Bloom,
   Vignette,
   Noise,
-  ChromaticAberration,
 } from "@react-three/postprocessing";
 import { BlendFunction } from "postprocessing";
-import { useEffect, useMemo, useSyncExternalStore } from "react";
-import { FloatType, Vector2 } from "three";
+import { useEffect, useSyncExternalStore } from "react";
+import { HalfFloatType } from "three";
 import ParticleField from "./ParticleField";
 
 // Responsive detection with live resize updates
@@ -26,10 +25,6 @@ function getDesktopSnapshot() {
 function getDesktopServerSnapshot() {
   return true;
 }
-
-// Memoized Vector2 instances
-const CHROMA_OFFSET = new Vector2(0.0005, 0.0005);
-const CHROMA_ZERO = new Vector2(0, 0);
 
 export default function Scene({
   onReady,
@@ -50,12 +45,17 @@ export default function Scene({
     onReady?.();
   }, [onReady]);
 
-  const particleCount = isDesktop ? 3000 : 1200;
-  const chromaOffset = useMemo(() => isDesktop ? CHROMA_OFFSET : CHROMA_ZERO, [isDesktop]);
+  // DESIGN.md: 2000 desktop / 800 mobile
+  const particleCount = isDesktop ? 2000 : 800;
 
   return (
     <Canvas
-      dpr={[1, 2]}
+      // On-demand rendering: the useFrame loop self-invalidates during the
+      // entrance and while interacting, then stops on idle (DESIGN.md
+      // "freeze-on-idle"). Without this the default "always" loop renders the
+      // full postprocessing chain at 60fps forever, saturating the main thread.
+      frameloop="demand"
+      dpr={[1, 1.5]}
       gl={{
         antialias: false,
         powerPreference: "high-performance",
@@ -74,19 +74,13 @@ export default function Scene({
       }}
     >
       <ParticleField count={particleCount} isReturning={isReturning} />
-      <EffectComposer frameBufferType={FloatType}>
+      <EffectComposer frameBufferType={HalfFloatType}>
         <Bloom
-          intensity={isDesktop ? 1.6 : 0.9}
-          luminanceThreshold={0.2}
+          intensity={isDesktop ? 1.5 : 0.8}
+          luminanceThreshold={0.3}
           luminanceSmoothing={0.3}
           mipmapBlur
           resolutionScale={isDesktop ? 1.0 : 0.5}
-        />
-        <ChromaticAberration
-          offset={chromaOffset}
-          blendFunction={BlendFunction.NORMAL}
-          radialModulation={false}
-          modulationOffset={0}
         />
         <Vignette darkness={0.7} offset={0.3} />
         <Noise
