@@ -68,3 +68,108 @@
   color: #e8a14c;
   text-shadow: 0 0 14px rgba(232, 161, 76, 0.6);
 }
+
+/* ---- Provenance Ledger (museum line, never a CV) ---- */
+.prov {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: min(34rem, 86vw);
+}
+.prov-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.prov-row:last-child {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.prov-btn {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.5rem;
+  background: none;
+  border: none;
+  cursor: default;
+  padding: 0.85rem 0;
+  text-align: left;
+  color: inherit;
+  font-family: var(--font-geist-sans), sans-serif;
+}
+.prov-label {
+  font-size: 0.92rem;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.prov-role {
+  color: rgba(255, 255, 255, 0.5);
+}
+.prov-dash {
+  color: rgba(255, 255, 255, 0.25);
+}
+.prov-company {
+  color: rgba(255, 255, 255, 0.82);
+  transition: color 0.4s ease;
+}
+.prov-receipt {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--prov-accent, #e8a14c);
+  text-align: right;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(6px);
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+@media (hover: hover) {
+  .prov-btn:hover .prov-receipt,
+  .prov-btn:focus-visible .prov-receipt {
+    opacity: 0.92;
+    transform: none;
+  }
+  .prov-btn:hover .prov-company {
+    color: #fff;
+  }
+}
+.prov-row.is-open .prov-receipt {
+  opacity: 0.92;
+  transform: none;
+}
+.prov-row.is-open .prov-company {
+  color: #fff;
+}
+.prov-btn:focus-visible {
+  outline: 1px solid rgba(255, 255, 255, 0.4);
+  outline-offset: 4px;
+}
+@media (max-width: 640px) {
+  .prov-btn {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+  .prov-receipt {
+    text-align: left;
+    transform: none;
+    width: 100%;
+  }
+}
+
+/* ---- Direction A: the name, luminous in the weather's light ---- */
+.weather-name {
+  font-family: var(--font-geist-sans), sans-serif;
+  font-weight: 800;
+  font-size: clamp(3.25rem, 15vw, 12rem);
+  line-height: 0.9;
+  letter-spacing: -0.045em;
+  margin: 0;
+  color: #fdf8f2;
+  /* glow shifts warm (dawn) → cool (night) via --warm set per frame */
+  --warm: 0.6;
+  text-shadow:
+    0 0 calc(28px + var(--warm) * 30px)
+      rgba(255, calc(180 + var(--warm) * 40), calc(120 + var(--warm) * 30), calc(0.18 + var(--warm) * 0.22)),
+    0 1px 0 rgba(0, 0, 0, 0.25);
+  will-change: text-shadow;
+}
