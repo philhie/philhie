@@ -26,6 +26,7 @@ uniform float uHaze;       // your-sky cloud cover 0..1
 uniform vec2  uDrift;      // your-sky wind
 uniform float uSun;        // dawn→night cycle, 0..1
 uniform float uReveal;     // entrance 0..1
+uniform float uSteps;      // adaptive march budget (tier-driven)
 
 // ---- 3D value noise + fbm (volumetric density) ----
 float hash13(vec3 p){
@@ -63,6 +64,14 @@ float density(vec3 p){
   float base = fbm3(p * 0.62);
   return clamp(base - (0.46 - 0.22 * uHaze), 0.0, 1.0);
 }
+// Cheap single-octave density for the light march (shadowing only — low-freq
+// is plenty, and this is where the cost was). ~3x cheaper than the main field.
+float densityLight(vec3 p){
+  p.xz += uDrift * uTime * 0.12;
+  p.y  += uTime * 0.015;
+  float n = vnoise3(p * 0.62);
+  return clamp(n - (0.46 - 0.22 * uHaze), 0.0, 1.0);
+}
 
 void main(){
   vec2 uv = vUv;
@@ -92,25 +101,25 @@ void main(){
   float ign = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
   float jitter = fract(ign + uTime * 0.61);
 
-  float t = 1.0 + jitter * 0.16;
+  float t = 1.0 + jitter * 0.18;
   float transmittance = 1.0;
   vec3 scattered = vec3(0.0);
-  const int STEPS = 34;
-  for (int i = 0; i < STEPS; i++){
-    if (transmittance < 0.02) break;
+  const int MAX_STEPS = 40;
+  for (int i = 0; i < MAX_STEPS; i++){
+    if (float(i) >= uSteps || transmittance < 0.02) break;
     vec3 sp = ro + rd * t;
     float dens = density(sp);
     if (dens > 0.001){
-      float ldens = 0.0; float lt = 0.12;
-      for (int j = 0; j < 4; j++){ ldens += density(sp + sunDir * lt); lt += 0.20; }
-      float lightT = exp(-ldens * 0.9);
+      float ldens = 0.0; float lt = 0.14;
+      for (int j = 0; j < 3; j++){ ldens += densityLight(sp + sunDir * lt); lt += 0.26; }
+      float lightT = exp(-ldens * 1.05);
       float phase = hg(dot(rd, sunDir), 0.55);
-      vec3 lum = sunCol * lightT * phase * 6.0 + sunCol * 0.16;
-      float dT = exp(-dens * 0.27);
+      vec3 lum = sunCol * lightT * phase * 6.2 + sunCol * 0.16;
+      float dT = exp(-dens * 0.3);
       scattered += transmittance * (1.0 - dT) * lum * dens;
       transmittance *= dT;
     }
-    t += 0.17;
+    t += 0.19;
   }
 
   // quiet sky behind the volume + sun bloom (baked, no post pass)

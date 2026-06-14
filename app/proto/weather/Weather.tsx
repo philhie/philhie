@@ -39,6 +39,7 @@ export default function Weather({ geo }: { geo: Geo }) {
     uDrift: { value: [0.3, 0.1] },
     uSun: { value: 0.4 },
     uReveal: { value: 0 },
+    uSteps: { value: 28 },
   }));
 
   const onFrame = (u: Uniforms, t: number, dt: number) => {
@@ -62,6 +63,7 @@ export default function Weather({ geo }: { geo: Geo }) {
     u.uHaze.value = s.haze;
     u.uDrift.value = s.drift;
     u.uSun.value = sun;
+    u.uSteps.value = caps?.tier === "high" ? 30 : 20;
     u.uReveal.value = reveal.current * dim;
 
     // shift the name's glow warm(day)→cool(night) — one cheap CSS var, throttled
@@ -89,7 +91,7 @@ export default function Weather({ geo }: { geo: Geo }) {
           fragment={weatherFragment}
           uniforms={uniforms}
           onFrame={onFrame}
-          dprCap={caps!.dprCap}
+          dprCap={Math.min(caps!.dprCap, caps!.tier === "high" ? 0.85 : 0.6)}
           onReady={() => setReady(true)}
           style={{ opacity: ready ? 1 : 0, transition: "opacity 1.6s ease" }}
         />
