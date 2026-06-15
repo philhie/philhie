@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import ShaderCanvas, { type Uniforms } from "../_engine/ShaderCanvas";
 import GradientPoster from "../_engine/GradientPoster";
 import Provenance from "../_components/Provenance";
@@ -30,14 +30,10 @@ export default function Weather({ geo }: { geo: Geo }) {
   const phase0 = useRef<number | null>(null);
   const lastWarm = useRef(-1);
   const blockRef = useRef<HTMLDivElement>(null);
-  const h1Ref = useRef<HTMLHeadingElement>(null);
   const playhead = useRef<Playhead>({ time: 0, playing: false, readAt: 0 });
   const sunOverride = useRef<number | null>(null);
   const [ready, setReady] = useState(false);
   const [scrubbing, setScrubbing] = useState(false);
-
-  // Offscreen full-viewport canvas holding the "PHIL HIE" mask the shader carves.
-  const maskRef = useRef<HTMLCanvasElement | null>(null);
 
   const [uniforms] = useState<Uniforms>(() => ({
     uPointer: { value: [0.5, 0.5] },
@@ -48,54 +44,9 @@ export default function Weather({ geo }: { geo: Geo }) {
     uDrift: { value: [0.3, 0.1] },
     uSun: { value: 0.4 },
     uReveal: { value: 0 },
-    uSteps: { value: 28 },
+    uSteps: { value: 26 },
     uBeat: { value: 0 },
   }));
-
-  // Draw the name into the mask canvas at the h1's exact screen rect.
-  useEffect(() => {
-    if (!maskRef.current) maskRef.current = document.createElement("canvas");
-    const cv = maskRef.current;
-    const draw = () => {
-      const h1 = h1Ref.current;
-      if (!h1) return;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const W = window.innerWidth;
-      const H = window.innerHeight;
-      cv.width = Math.max(1, Math.floor(W * dpr));
-      cv.height = Math.max(1, Math.floor(H * dpr));
-      const ctx = cv.getContext("2d");
-      if (!ctx) return;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.fillStyle = "#000";
-      ctx.fillRect(0, 0, W, H);
-      const r = h1.getBoundingClientRect();
-      const cs = getComputedStyle(h1);
-      ctx.fillStyle = "#fff";
-      ctx.textBaseline = "top";
-      ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
-      const spaced = ctx as CanvasRenderingContext2D & { letterSpacing?: string };
-      try { spaced.letterSpacing = cs.letterSpacing; } catch { /* older browsers */ }
-      ctx.fillText("PHIL HIE", r.left, r.top);
-      cv.dataset.dirty = "1";
-    };
-    let raf = 0;
-    const onResize = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(draw);
-    };
-    draw();
-    document.fonts?.ready?.then(draw).catch(() => {});
-    const t1 = window.setTimeout(draw, 350);
-    const t2 = window.setTimeout(draw, 1200);
-    window.addEventListener("resize", onResize);
-    return () => {
-      window.removeEventListener("resize", onResize);
-      cancelAnimationFrame(raf);
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
-  }, []);
 
   const onFrame = (u: Uniforms, t: number, dt: number) => {
     const p = pointer.read(dt);
@@ -128,7 +79,7 @@ export default function Weather({ geo }: { geo: Geo }) {
     u.uHaze.value = s.haze;
     u.uDrift.value = s.drift;
     u.uSun.value = sun;
-    u.uSteps.value = caps?.tier === "high" ? 30 : 20;
+    u.uSteps.value = caps?.tier === "high" ? 26 : 18;
     u.uBeat.value = beat;
     u.uReveal.value = reveal.current * dim;
 
@@ -156,8 +107,7 @@ export default function Weather({ geo }: { geo: Geo }) {
           fragment={weatherFragment}
           uniforms={uniforms}
           onFrame={onFrame}
-          textures={() => ({ uNameMask: maskRef.current })}
-          dprCap={Math.min(caps!.dprCap, caps!.tier === "high" ? 1.5 : 0.72)}
+          dprCap={Math.min(caps!.dprCap, caps!.tier === "high" ? 0.72 : 0.55)}
           targetFps={40}
           onReady={() => setReady(true)}
           style={{ opacity: ready ? 1 : 0, transition: "opacity 1.6s ease" }}
@@ -165,17 +115,7 @@ export default function Weather({ geo }: { geo: Geo }) {
       )}
 
       <main ref={blockRef} style={block}>
-        <h1
-          ref={h1Ref}
-          className="weather-name"
-          style={
-            ready
-              ? { color: "rgba(253,248,242,0.16)", textShadow: "none" }
-              : undefined
-          }
-        >
-          PHIL&nbsp;HIE
-        </h1>
+        <h1 className="weather-name">PHIL&nbsp;HIE</h1>
         <div style={{ marginTop: "clamp(1.5rem, 3vh, 2.5rem)" }}>
           <Provenance accent={ACCENT} />
         </div>
