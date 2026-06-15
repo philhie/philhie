@@ -36,8 +36,6 @@ export default function Weather({ geo }: { geo: Geo }) {
   const noiseRef = useRef<HTMLCanvasElement | null>(null);
   const [ready, setReady] = useState(false);
   const [scrubbing, setScrubbing] = useState(false);
-  const [cloud, setCloud] = useState(0.45); // 0 sparse .. 1 dense
-  const [scl, setScl] = useState(0.155); // cloud noise scale
 
   // Bake the 3D cloud-noise atlas once (the shader samples it instead of
   // computing fbm per step). Runs before the deferred WebGL init reads it.
@@ -97,8 +95,8 @@ export default function Weather({ geo }: { geo: Geo }) {
     u.uSun.value = sun;
     u.uSteps.value = caps?.tier === "high" ? 30 : 22;
     u.uBeat.value = beat;
-    u.uCoverage.value = 0.68 - cloud * 0.36; // higher slider → fuller clouds
-    u.uCloudScale.value = scl;
+    u.uCoverage.value = 0.518; // baked from the dev tuning
+    u.uCloudScale.value = 0.155;
     u.uReveal.value = reveal.current * dim;
 
     if (blockRef.current && Math.abs(warm - lastWarm.current) > 0.01) {
@@ -134,11 +132,11 @@ export default function Weather({ geo }: { geo: Geo }) {
       )}
 
       <main ref={blockRef} style={block}>
-        <h1 className="weather-name">PHIL&nbsp;HIE</h1>
-        <div style={{ marginTop: "clamp(1.5rem, 3vh, 2.5rem)" }}>
+        <h1 className="weather-name rise-in" style={{ animationDelay: "0.35s" }}>PHIL&nbsp;HIE</h1>
+        <div className="rise-in" style={{ marginTop: "clamp(1.5rem, 3vh, 2.5rem)", animationDelay: "0.55s" }}>
           <Provenance accent={ACCENT} />
         </div>
-        <nav style={links}>
+        <nav className="rise-in" style={{ ...links, animationDelay: "0.75s" }}>
           <a href="https://github.com/philhie" style={link} target="_blank" rel="noreferrer">GitHub</a>
           <a href="https://linkedin.com/in/philhie" style={link} target="_blank" rel="noreferrer">LinkedIn</a>
           <a href="/proto/weather" style={link}>Thoughts</a>
@@ -147,7 +145,7 @@ export default function Weather({ geo }: { geo: Geo }) {
 
       {geo.city && <p style={skyTag}>your sky · {geo.city.toLowerCase()}</p>}
 
-      {/* dev controls — dial the look, then tell me the values to bake in */}
+      {/* dev: jump the sky to any time of day (removed at final lock) */}
       <div style={devPanel}>
         <label style={devRow}>
           <span style={devLabel}>time</span>
@@ -157,18 +155,6 @@ export default function Weather({ geo }: { geo: Geo }) {
           {scrubbing
             ? <button onClick={() => { sunOverride.current = null; setScrubbing(false); }} style={autoBtn}>auto</button>
             : <span style={devVal}>auto</span>}
-        </label>
-        <label style={devRow}>
-          <span style={devLabel}>clouds</span>
-          <input type="range" min={0} max={1} step={0.01} value={cloud}
-            onChange={(e) => setCloud(parseFloat(e.target.value))} style={devSlider} aria-label="cloud coverage" />
-          <span style={devVal}>{cloud.toFixed(2)}</span>
-        </label>
-        <label style={devRow}>
-          <span style={devLabel}>scale</span>
-          <input type="range" min={0.05} max={0.4} step={0.005} value={scl}
-            onChange={(e) => setScl(parseFloat(e.target.value))} style={devSlider} aria-label="cloud scale" />
-          <span style={devVal}>{scl.toFixed(3)}</span>
         </label>
       </div>
 

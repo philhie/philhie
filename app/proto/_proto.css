@@ -173,3 +173,18 @@
     0 1px 0 rgba(0, 0, 0, 0.25);
   will-change: text-shadow;
 }
+
+/* Direction A: cinematic content entrance (rises in over the weather) */
+@media (prefers-reduced-motion: no-preference) {
+  .rise-in {
+    opacity: 0;
+    transform: translateY(1.4rem);
+    animation: weather-rise 1.2s cubic-bezier(0.19, 1, 0.22, 1) both;
+  }
+}
+@keyframes weather-rise {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
