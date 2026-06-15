@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import ShaderCanvas, { type Uniforms } from "../_engine/ShaderCanvas";
 import GradientPoster from "../_engine/GradientPoster";
 import Provenance from "../_components/Provenance";
@@ -139,7 +140,7 @@ export default function Weather({ geo }: { geo: Geo }) {
         <nav className="rise-in" style={{ ...links, animationDelay: "0.75s" }}>
           <a href="https://github.com/philhie" style={link} target="_blank" rel="noreferrer">GitHub</a>
           <a href="https://linkedin.com/in/philhie" style={link} target="_blank" rel="noreferrer">LinkedIn</a>
-          <a href="/proto/weather" style={link}>Thoughts</a>
+          <Link href="/thoughts" style={link}>Thoughts</Link>
         </nav>
       </main>
 
