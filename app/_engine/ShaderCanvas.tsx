@@ -214,7 +214,18 @@ export default function ShaderCanvas({
       };
       raf = requestAnimationFrame(loop);
 
+      // If the GPU drops the context (mobile backgrounding, GPU reset, too many
+      // contexts), stop the loop and hide the canvas so the poster underneath
+      // shows through — never a frozen black rectangle.
+      const onContextLost = (e: Event) => {
+        e.preventDefault();
+        cancelAnimationFrame(raf);
+        canvas.style.display = "none";
+      };
+      canvas.addEventListener("webglcontextlost", onContextLost as EventListener);
+
       cleanupFns.push(() => {
+        canvas.removeEventListener("webglcontextlost", onContextLost as EventListener);
         ro.disconnect();
         const ext = gl.getExtension("WEBGL_lose_context");
         ext?.loseContext();

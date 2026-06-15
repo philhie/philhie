@@ -5,6 +5,10 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { getThought, getThoughtSlugs, formatDate } from "../_data";
 
+// Only the essays we ship exist — unknown slugs are a static 404, never an
+// on-demand render that touches the filesystem with a request-controlled slug.
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return getThoughtSlugs().map((slug) => ({ slug }));
 }

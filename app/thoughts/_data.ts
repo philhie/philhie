@@ -27,6 +27,8 @@ export function getThoughtSlugs(): string[] {
 }
 
 export function getThought(slug: string): Thought | null {
+  // Containment guard: a slug is only ever a kebab-case filename, never a path.
+  if (!/^[a-z0-9-]+$/.test(slug)) return null;
   const fp = path.join(DIR, `${slug}.md`);
   if (!fs.existsSync(fp)) return null;
   const { data, content } = matter(fs.readFileSync(fp, "utf8"));

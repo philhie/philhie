@@ -90,10 +90,13 @@ export default function TrackEmbed({
       });
     };
 
+    let patchedReady: (() => void) | null = null;
+    let prevReady: (() => void) | undefined;
     if (window.YT?.Player) init();
     else {
-      const prev = window.onYouTubeIframeAPIReady;
-      window.onYouTubeIframeAPIReady = () => { prev?.(); init(); };
+      prevReady = window.onYouTubeIframeAPIReady;
+      patchedReady = () => { prevReady?.(); init(); };
+      window.onYouTubeIframeAPIReady = patchedReady;
       if (!document.getElementById("yt-iframe-api")) {
         const s = document.createElement("script");
         s.id = "yt-iframe-api";
@@ -131,6 +134,10 @@ export default function TrackEmbed({
       cancelled = true;
       clearInterval(poll);
       evs.forEach((ev) => window.removeEventListener(ev, onGesture));
+      // Restore the global we patched (only if no later embed replaced it).
+      if (patchedReady && window.onYouTubeIframeAPIReady === patchedReady) {
+        window.onYouTubeIframeAPIReady = prevReady;
+      }
       try { playerRef.current?.destroy(); } catch { /* noop */ }
     };
   }, [playheadRef]);
