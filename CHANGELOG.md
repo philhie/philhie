@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.0.0] - 2026-06-15
+
+The relaunch. The site is rebuilt from scratch around one idea: a name made of weather.
+
+### Added
+- A new homepage. A living, GPU-light volumetric sky runs a dawn-to-night loop behind the name, drawn as a single fullscreen shader (OGL/GLSL) rather than a particle field. It adapts to the device: capable machines get the full atmosphere, weaker ones a still poster, and it falls back to the poster if the browser drops the WebGL context instead of freezing.
+- A Provenance Ledger of five credentials (Founder, Founders Associate at Avelios, Co-Founder of Adepto, Investment Banker at Goldman Sachs, Co-Founder of Grex), each revealing its proof on hover or tap.
+- "Your sky": the scene seeds the local time of day from the visitor's city-level location (Vercel headers), refined by live cloud cover and wind from Open-Meteo.
+- A soundtrack via a muted YouTube embed that unmutes on the first interaction, with a beat clock driving subtle motion.
+- /thoughts: a dark, serif reading room for essays (Markdown, statically generated), linked from the homepage. Ships with a "Coming Soon" placeholder.
+
+### Changed
+- Moved off the Three.js particle hero to the lighter single-shader engine. The render loop is frame-rate-capped (30fps) and the cloud noise is baked into a texture, so the scene stays smooth on weak hardware.
+
+### Removed
+- The old Three.js particle homepage and its components, the four prototype worlds, and an unused Web-Audio synth.
+
 ## [0.1.0.5] - 2026-05-31
 
 ### Fixed

@@ -1,0 +1,179 @@
+/* The Reading Room — from the cinema (hero) into the library.
+   Dark, calm, typographic. Overrides the hero's no-scroll body. */
+
+.thoughts-root {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  background-color: #07080c;
+  background-image: radial-gradient(
+    120% 60% at 50% -10%,
+    rgba(232, 161, 76, 0.06),
+    transparent 60%
+  );
+  color: rgba(238, 231, 223, 0.86);
+}
+
+.thoughts-wrap {
+  width: min(40rem, 90vw); /* ~65ch measure */
+  margin: 0 auto;
+  padding: clamp(4.5rem, 14vh, 9rem) 0 clamp(6rem, 18vh, 11rem);
+}
+
+/* ---- back / section nav ---- */
+.thoughts-back {
+  display: inline-block;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  text-decoration: none;
+  transition: color 0.3s ease;
+  margin-bottom: clamp(2.5rem, 6vh, 4rem);
+}
+.thoughts-back:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* ---- index ---- */
+.thoughts-title {
+  font-family: var(--font-geist-sans), sans-serif;
+  font-weight: 800;
+  font-size: clamp(2.25rem, 7vw, 4rem);
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+  color: #fbf7f2;
+  margin: 0;
+}
+.thoughts-sub {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-style: italic;
+  font-size: clamp(1rem, 2vw, 1.3rem);
+  color: rgba(232, 161, 76, 0.7);
+  margin: 1rem 0 clamp(3rem, 8vh, 5rem);
+}
+.thoughts-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.thoughts-item {
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+}
+.thoughts-item:last-child {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+.thoughts-link {
+  display: block;
+  padding: clamp(1.5rem, 4vh, 2.25rem) 0;
+  text-decoration: none;
+  color: inherit;
+}
+.thoughts-link h2 {
+  font-family: var(--font-geist-sans), sans-serif;
+  font-weight: 600;
+  font-size: clamp(1.4rem, 3.5vw, 2rem);
+  letter-spacing: -0.02em;
+  color: #f4ede5;
+  margin: 0;
+  transition: color 0.3s ease;
+}
+.thoughts-link:hover h2 {
+  color: #fff;
+}
+.thoughts-link p {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-size: 1.05rem;
+  color: rgba(220, 212, 204, 0.6);
+  margin: 0.6rem 0 0;
+  line-height: 1.5;
+}
+.thoughts-meta {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.38);
+  margin-top: 0.8rem;
+}
+
+/* ---- article ---- */
+.article-title {
+  font-family: var(--font-geist-sans), sans-serif;
+  font-weight: 800;
+  font-size: clamp(2rem, 5.5vw, 3.25rem);
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  color: #fbf7f2;
+  margin: 0 0 1rem;
+}
+.article-meta {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0 0 clamp(2.5rem, 7vh, 4rem);
+}
+
+/* ---- the prose ---- */
+.prose-thoughts {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-size: clamp(1.1rem, 0.6vw + 1rem, 1.28rem);
+  line-height: 1.75;
+  color: rgba(238, 231, 223, 0.84);
+}
+.prose-thoughts > * + * {
+  margin-top: 1.6em;
+}
+.prose-thoughts p {
+  margin: 0;
+}
+.prose-thoughts a {
+  color: #e8a14c;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(232, 161, 76, 0.35);
+  transition: border-color 0.3s ease;
+}
+.prose-thoughts a:hover {
+  border-color: #e8a14c;
+}
+.prose-thoughts h2,
+.prose-thoughts h3 {
+  font-family: var(--font-geist-sans), sans-serif;
+  color: #f4ede5;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-top: 2.4em;
+}
+.prose-thoughts h2 { font-size: 1.5em; font-weight: 700; }
+.prose-thoughts h3 { font-size: 1.2em; font-weight: 600; }
+.prose-thoughts blockquote {
+  margin: 0;
+  padding-left: 1.4em;
+  border-left: 2px solid rgba(232, 161, 76, 0.4);
+  font-style: italic;
+  color: rgba(238, 231, 223, 0.66);
+}
+.prose-thoughts em { font-style: italic; }
+.prose-thoughts strong { color: #f4ede5; font-weight: 600; }
+.prose-thoughts ul,
+.prose-thoughts ol { padding-left: 1.3em; }
+.prose-thoughts li + li { margin-top: 0.5em; }
+.prose-thoughts code {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.85em;
+  background: rgba(255, 255, 255, 0.07);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+.prose-thoughts hr {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 3em 0;
+}

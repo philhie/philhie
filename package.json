@@ -1,6 +1,6 @@
 {
   "name": "mein-erstes-projekt",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -14,10 +14,14 @@
     "@react-three/postprocessing": "^3.0.4",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
+    "gray-matter": "^4.0.3",
     "next": "16.1.6",
+    "ogl": "^1.0.11",
     "postprocessing": "^6.39.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
     "three": "^0.183.2"
   },
   "devDependencies": {
