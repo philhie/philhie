@@ -1,27 +1,28 @@
 "use client";
 
 /**
- * The real track, embedded. A hidden YouTube IFrame player streams the official
- * recording (the license travels with the embed). It autoplays MUTED from 0:00
- * (browser policy), loops the whole song, and unmutes the instant the visitor
- * does anything (move / click / scroll / key / touch). We only read playback
- * state (position + playing) — never reproduce the recording.
+ * The real track via YouTube's licensed player. We build the iframe ourselves so
+ * we can set allow="autoplay; encrypted-media" (required for cross-origin muted
+ * autoplay + EME). It autoplays MUTED and loops; sound starts on the visitor's
+ * first CLICK/tap. (Browser security: a YouTube cross-origin frame can't be
+ * unmuted by mouse-move/scroll on the parent page — only a real click/tap works,
+ * and even that is best-effort. The fully-seamless version needs a self-hosted,
+ * licensed audio file.) We read only playback state.
  */
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 
-const VIDEO_ID = "-ZBUXDQ4leM"; // Kanye West — "Flashing Lights" (extended intro)
+const VIDEO_ID = "-ZBUXDQ4leM"; // Kanye — "Flashing Lights" (extended-intro upload)
 
 export interface Playhead {
-  time: number; // seconds into the track at readAt
+  time: number;
   playing: boolean;
-  readAt: number; // performance.now() when read (for interpolation)
+  readAt: number;
 }
 
 interface YTPlayer {
   mute: () => void;
   unMute: () => void;
-  isMuted: () => boolean;
   setVolume: (v: number) => void;
   playVideo: () => void;
   seekTo: (seconds: number, allowSeekAhead: boolean) => void;
@@ -48,21 +49,29 @@ export default function TrackEmbed({
   const mountRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YTPlayer | null>(null);
   const playingRef = useRef(false);
-  const [on, setOn] = useState(false); // sound on (unmuted)
+  const [on, setOn] = useState(false);
   const [ready, setReady] = useState(false);
+  const [errored, setErrored] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     let unmuted = false;
+    const container = mountRef.current;
+    if (!container) return;
+
+    // Build the iframe ourselves so we control allow=.
+    const iframe = document.createElement("iframe");
+    iframe.allow = "autoplay; encrypted-media";
+    iframe.style.cssText = "width:320px;height:180px;border:0;";
+    const origin = encodeURIComponent(window.location.origin);
+    iframe.src =
+      `https://www.youtube.com/embed/${VIDEO_ID}?enablejsapi=1&autoplay=1&mute=1` +
+      `&playsinline=1&controls=0&loop=1&playlist=${VIDEO_ID}&rel=0&modestbranding=1&origin=${origin}`;
+    container.appendChild(iframe);
 
     const init = () => {
-      if (cancelled || !mountRef.current || !window.YT) return;
-      playerRef.current = new window.YT.Player(mountRef.current, {
-        videoId: VIDEO_ID,
-        playerVars: {
-          autoplay: 1, controls: 0, disablekb: 1, fs: 0,
-          modestbranding: 1, playsinline: 1, rel: 0, mute: 1,
-        },
+      if (cancelled || !window.YT) return;
+      playerRef.current = new window.YT.Player(iframe, {
         events: {
           onReady: (e: { target: YTPlayer }) => {
             e.target.mute();
@@ -71,11 +80,12 @@ export default function TrackEmbed({
           },
           onStateChange: (e: { data: number; target: YTPlayer }) => {
             playingRef.current = e.data === 1;
-            if (e.data === 0) { // ENDED → loop the whole song
+            if (e.data === 0) {
               e.target.seekTo(0, true);
               e.target.playVideo();
             }
           },
+          onError: () => setErrored(true), // 101/150 embedding disabled, 100 removed
         },
       });
     };
@@ -92,24 +102,22 @@ export default function TrackEmbed({
       }
     }
 
-    // Unmute on the first real interaction (browser-legal "auto" sound).
-    const events = ["pointerdown", "keydown", "wheel", "touchstart", "pointermove"];
-    const onFirstGesture = () => {
+    // Unmute on the first valid gesture — click / tap / key (NOT move/scroll,
+    // which browsers don't accept as activation for a cross-origin frame, esp iOS).
+    const evs = ["click", "touchend", "keydown", "pointerdown"];
+    const onGesture = () => {
       if (unmuted) return;
       const p = playerRef.current;
       if (!p) return;
       unmuted = true;
       p.unMute();
-      p.setVolume(70);
+      p.setVolume(72);
       p.playVideo();
       setOn(true);
-      events.forEach((ev) => window.removeEventListener(ev, onFirstGesture));
+      evs.forEach((ev) => window.removeEventListener(ev, onGesture));
     };
-    events.forEach((ev) =>
-      window.addEventListener(ev, onFirstGesture, { passive: true, once: false }),
-    );
+    evs.forEach((ev) => window.addEventListener(ev, onGesture, { passive: true }));
 
-    // Publish the playhead for the beat clock.
     const poll = window.setInterval(() => {
       const p = playerRef.current;
       if (p?.getCurrentTime && playheadRef?.current) {
@@ -122,7 +130,7 @@ export default function TrackEmbed({
     return () => {
       cancelled = true;
       clearInterval(poll);
-      events.forEach((ev) => window.removeEventListener(ev, onFirstGesture));
+      evs.forEach((ev) => window.removeEventListener(ev, onGesture));
       try { playerRef.current?.destroy(); } catch { /* noop */ }
     };
   }, [playheadRef]);
@@ -131,7 +139,7 @@ export default function TrackEmbed({
     const p = playerRef.current;
     if (!p) return;
     if (on) { p.mute(); setOn(false); }
-    else { p.unMute(); p.setVolume(70); p.playVideo(); setOn(true); }
+    else { p.unMute(); p.setVolume(72); p.playVideo(); setOn(true); }
   };
 
   return (
@@ -142,9 +150,9 @@ export default function TrackEmbed({
       >
         <div ref={mountRef} />
       </div>
-      <button onClick={toggle} aria-pressed={on} disabled={!ready} style={btn(accent, on)}>
+      <button onClick={toggle} aria-pressed={on} disabled={!ready || errored} style={btn(accent, on)}>
         <span style={dot(accent, on)} />
-        {on ? "sound on" : "listen"}
+        {errored ? "audio off" : on ? "sound on" : "listen"}
       </button>
     </>
   );
