@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import ShaderCanvas, { type Uniforms } from "../_engine/ShaderCanvas";
 import GradientPoster from "../_engine/GradientPoster";
 import Provenance from "../_components/Provenance";
+import TrackEmbed from "../_audio/TrackEmbed";
 import { useCapabilities } from "../_hooks/useCapabilities";
 import {
   usePointerField,
@@ -115,6 +116,8 @@ export default function Weather({ geo }: { geo: Geo }) {
           your sky · {geo.city.toLowerCase()}
         </p>
       )}
+
+      <TrackEmbed accent={ACCENT} />
     </>
   );
 }
