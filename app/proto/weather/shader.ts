@@ -26,6 +26,8 @@ uniform float uReveal;
 uniform float uSteps;
 uniform float uBeat;           // 0..1 musical pulse
 uniform sampler2D uNoise;      // baked 3D cloud noise (2D atlas: 64 slices, 8x8)
+uniform float uCoverage;       // cloud coverage threshold (dev-tunable)
+uniform float uCloudScale;     // cloud noise scale (dev-tunable)
 
 float hash13(vec3 p){
   p = fract(p * 0.1031);
@@ -63,11 +65,11 @@ float noise3D(vec3 p){
 }
 float density(vec3 p){
   p.xz += uDrift*uTime*0.12; p.y += uTime*0.015;
-  return clamp(noise3D(p * 0.156) - (0.52 - 0.22*uHaze), 0.0, 1.0);
+  return clamp(noise3D(p * uCloudScale) - (uCoverage - 0.22*uHaze), 0.0, 1.0);
 }
 float densityLight(vec3 p){
   p.xz += uDrift*uTime*0.12; p.y += uTime*0.015;
-  return clamp(noise3D(p * 0.156) - (0.52 - 0.22*uHaze), 0.0, 1.0);
+  return clamp(noise3D(p * uCloudScale) - (uCoverage - 0.22*uHaze), 0.0, 1.0);
 }
 
 void main(){

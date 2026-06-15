@@ -36,6 +36,8 @@ export default function Weather({ geo }: { geo: Geo }) {
   const noiseRef = useRef<HTMLCanvasElement | null>(null);
   const [ready, setReady] = useState(false);
   const [scrubbing, setScrubbing] = useState(false);
+  const [cloud, setCloud] = useState(0.45); // 0 sparse .. 1 dense
+  const [scl, setScl] = useState(0.155); // cloud noise scale
 
   // Bake the 3D cloud-noise atlas once (the shader samples it instead of
   // computing fbm per step). Runs before the deferred WebGL init reads it.
@@ -58,6 +60,8 @@ export default function Weather({ geo }: { geo: Geo }) {
     uReveal: { value: 0 },
     uSteps: { value: 26 },
     uBeat: { value: 0 },
+    uCoverage: { value: 0.52 },
+    uCloudScale: { value: 0.155 },
   }));
 
   const onFrame = (u: Uniforms, t: number, dt: number) => {
@@ -91,8 +95,10 @@ export default function Weather({ geo }: { geo: Geo }) {
     u.uHaze.value = s.haze;
     u.uDrift.value = s.drift;
     u.uSun.value = sun;
-    u.uSteps.value = caps?.tier === "high" ? 20 : 14;
+    u.uSteps.value = caps?.tier === "high" ? 30 : 22;
     u.uBeat.value = beat;
+    u.uCoverage.value = 0.68 - cloud * 0.36; // higher slider → fuller clouds
+    u.uCloudScale.value = scl;
     u.uReveal.value = reveal.current * dim;
 
     if (blockRef.current && Math.abs(warm - lastWarm.current) > 0.01) {
@@ -120,7 +126,7 @@ export default function Weather({ geo }: { geo: Geo }) {
           uniforms={uniforms}
           onFrame={onFrame}
           textures={() => ({ uNoise: noiseRef.current })}
-          dprCap={Math.min(caps!.dprCap, caps!.tier === "high" ? 0.6 : 0.45)}
+          dprCap={Math.min(caps!.dprCap, caps!.tier === "high" ? 0.85 : 0.6)}
           targetFps={30}
           onReady={() => setReady(true)}
           style={{ opacity: ready ? 1 : 0, transition: "opacity 1.6s ease" }}
@@ -141,29 +147,29 @@ export default function Weather({ geo }: { geo: Geo }) {
 
       {geo.city && <p style={skyTag}>your sky · {geo.city.toLowerCase()}</p>}
 
-      {/* dev: drag to set the sky phase (jump to night); doubles as frame-audit */}
-      <div style={scrub}>
-        <input
-          type="range"
-          min={0}
-          max={1}
-          step={0.001}
-          defaultValue={0.4}
-          onInput={(e) => {
-            sunOverride.current = parseFloat((e.target as HTMLInputElement).value);
-            if (!scrubbing) setScrubbing(true);
-          }}
-          aria-label="sky time"
-          style={{ width: "min(40vw, 16rem)", accentColor: ACCENT, opacity: 0.5 }}
-        />
-        {scrubbing && (
-          <button
-            onClick={() => { sunOverride.current = null; setScrubbing(false); }}
-            style={autoBtn}
-          >
-            auto
-          </button>
-        )}
+      {/* dev controls — dial the look, then tell me the values to bake in */}
+      <div style={devPanel}>
+        <label style={devRow}>
+          <span style={devLabel}>time</span>
+          <input type="range" min={0} max={1} step={0.001} defaultValue={0.4}
+            onInput={(e) => { sunOverride.current = parseFloat((e.target as HTMLInputElement).value); if (!scrubbing) setScrubbing(true); }}
+            style={devSlider} aria-label="sky time" />
+          {scrubbing
+            ? <button onClick={() => { sunOverride.current = null; setScrubbing(false); }} style={autoBtn}>auto</button>
+            : <span style={devVal}>auto</span>}
+        </label>
+        <label style={devRow}>
+          <span style={devLabel}>clouds</span>
+          <input type="range" min={0} max={1} step={0.01} value={cloud}
+            onChange={(e) => setCloud(parseFloat(e.target.value))} style={devSlider} aria-label="cloud coverage" />
+          <span style={devVal}>{cloud.toFixed(2)}</span>
+        </label>
+        <label style={devRow}>
+          <span style={devLabel}>scale</span>
+          <input type="range" min={0.05} max={0.4} step={0.005} value={scl}
+            onChange={(e) => setScl(parseFloat(e.target.value))} style={devSlider} aria-label="cloud scale" />
+          <span style={devVal}>{scl.toFixed(3)}</span>
+        </label>
       </div>
 
       <TrackEmbed accent={ACCENT} playheadRef={playhead} />
@@ -202,16 +208,32 @@ const skyTag: React.CSSProperties = {
   textTransform: "uppercase",
   color: "rgba(232,161,76,0.55)",
 };
-const scrub: React.CSSProperties = {
+const devPanel: React.CSSProperties = {
   position: "fixed",
-  top: "clamp(1rem, 2.5vh, 1.75rem)",
+  top: "clamp(0.75rem, 2vh, 1.5rem)",
   left: "50%",
   transform: "translateX(-50%)",
   zIndex: 30,
   display: "flex",
-  alignItems: "center",
-  gap: "0.75rem",
+  flexDirection: "column",
+  gap: "0.35rem",
+  padding: "0.5rem 0.75rem",
+  borderRadius: 8,
+  background: "rgba(0,0,0,0.3)",
 };
+const devRow: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "0.6rem",
+  fontFamily: "var(--font-geist-mono), monospace",
+  fontSize: "0.55rem",
+  letterSpacing: "0.12em",
+  textTransform: "uppercase",
+  color: "rgba(255,255,255,0.5)",
+};
+const devLabel: React.CSSProperties = { width: "3.2rem", textAlign: "right" };
+const devSlider: React.CSSProperties = { width: "min(34vw, 13rem)", accentColor: ACCENT, opacity: 0.6 };
+const devVal: React.CSSProperties = { width: "2.8rem", color: ACCENT };
 const autoBtn: React.CSSProperties = {
   background: "none",
   border: "none",
