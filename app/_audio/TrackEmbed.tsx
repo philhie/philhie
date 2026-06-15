@@ -12,7 +12,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 
-const VIDEO_ID = "-ZBUXDQ4leM"; // Kanye — "Flashing Lights" (extended-intro upload)
+const VIDEO_ID = "_XmKYwC1H9Y"; // the site's track — youtu.be/_XmKYwC1H9Y
 
 export interface Playhead {
   time: number;
