@@ -87,9 +87,9 @@ void main(){
     vec3 sp = ro + rd * t;
     float dens = density(sp);
     if (dens > 0.001){
-      float ldens = 0.0; float lt = 0.14;
-      for (int j = 0; j < 3; j++){ ldens += densityLight(sp + sunDir * lt); lt += 0.26; }
-      float lightT = exp(-ldens * 1.05);
+      float ldens = 0.0; float lt = 0.16;
+      for (int j = 0; j < 2; j++){ ldens += densityLight(sp + sunDir * lt); lt += 0.34; }
+      float lightT = exp(-ldens * 1.2);
       float phase = hg(dot(rd, sunDir), 0.6);
       vec3 lum = sunCol * lightT * phase * 6.5 + sunCol * 0.14;
       float dT = exp(-dens * 0.3);

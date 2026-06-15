@@ -79,7 +79,7 @@ export default function Weather({ geo }: { geo: Geo }) {
     u.uHaze.value = s.haze;
     u.uDrift.value = s.drift;
     u.uSun.value = sun;
-    u.uSteps.value = caps?.tier === "high" ? 26 : 18;
+    u.uSteps.value = caps?.tier === "high" ? 20 : 14;
     u.uBeat.value = beat;
     u.uReveal.value = reveal.current * dim;
 
@@ -107,8 +107,8 @@ export default function Weather({ geo }: { geo: Geo }) {
           fragment={weatherFragment}
           uniforms={uniforms}
           onFrame={onFrame}
-          dprCap={Math.min(caps!.dprCap, caps!.tier === "high" ? 0.72 : 0.55)}
-          targetFps={40}
+          dprCap={Math.min(caps!.dprCap, caps!.tier === "high" ? 0.6 : 0.45)}
+          targetFps={30}
           onReady={() => setReady(true)}
           style={{ opacity: ready ? 1 : 0, transition: "opacity 1.6s ease" }}
         />
