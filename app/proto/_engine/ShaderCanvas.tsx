@@ -30,6 +30,8 @@ export interface ShaderCanvasProps {
   onFrame?: (u: Uniforms, t: number, dt: number) => void;
   /** Render-buffer DPR ceiling (from capability detection). */
   dprCap?: number;
+  /** Cap the render rate (fps). 0 = uncapped. Big win for slow scenes on 120Hz. */
+  targetFps?: number;
   /** Pause the render loop (e.g. behind a modal). */
   paused?: boolean;
   /** Fired after the first successful frame — used to crossfade out the poster. */
@@ -53,6 +55,7 @@ export default function ShaderCanvas({
   uniforms,
   onFrame,
   dprCap = 1,
+  targetFps = 0,
   paused = false,
   onReady,
   className,
@@ -143,12 +146,19 @@ export default function ShaderCanvas({
       const ro = new ResizeObserver(resize);
       ro.observe(container);
 
-      let last = performance.now();
+      let lastRender = performance.now();
+      const frameInterval = targetFps > 0 ? 1000 / targetFps : 0;
       const loop = (now: number) => {
         raf = requestAnimationFrame(loop);
-        const dt = Math.min((now - last) / 1000, 0.05);
-        last = now;
-        if (pausedRef.current || document.hidden) return;
+        if (pausedRef.current || document.hidden) {
+          lastRender = now;
+          return;
+        }
+        // Frame-rate cap: a slow, living scene doesn't need 120Hz. Skipping
+        // frames here is the single biggest win on ProMotion displays.
+        if (frameInterval > 0 && now - lastRender < frameInterval - 1) return;
+        const dt = Math.min((now - lastRender) / 1000, 0.05);
+        lastRender = now;
 
         const t = now / 1000;
         u.uTime.value = t;
@@ -160,20 +170,20 @@ export default function ShaderCanvas({
           onReadyRef.current?.();
         }
 
-        // Frame-budget watchdog: if we slip under ~50fps for a stretch, drop the
-        // buffer scale a notch (never below the floor). Cheap insurance for the
-        // weakest hardware.
-        fpsAccum += dt;
-        fpsFrames += 1;
-        if (fpsAccum >= 1) {
-          const fps = fpsFrames / fpsAccum;
-          if (fps < 50 && effectiveDpr > minDpr && now - lastDegrade > 2500) {
-            effectiveDpr = Math.max(minDpr, effectiveDpr - 0.15);
-            lastDegrade = now;
-            resize();
+        // DPR watchdog only when uncapped (a cap already bounds the frame cost).
+        if (frameInterval === 0) {
+          fpsAccum += dt;
+          fpsFrames += 1;
+          if (fpsAccum >= 1) {
+            const fps = fpsFrames / fpsAccum;
+            if (fps < 50 && effectiveDpr > minDpr && now - lastDegrade > 2500) {
+              effectiveDpr = Math.max(minDpr, effectiveDpr - 0.15);
+              lastDegrade = now;
+              resize();
+            }
+            fpsAccum = 0;
+            fpsFrames = 0;
           }
-          fpsAccum = 0;
-          fpsFrames = 0;
         }
       };
       raf = requestAnimationFrame(loop);

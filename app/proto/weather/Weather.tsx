@@ -92,6 +92,7 @@ export default function Weather({ geo }: { geo: Geo }) {
           uniforms={uniforms}
           onFrame={onFrame}
           dprCap={Math.min(caps!.dprCap, caps!.tier === "high" ? 0.85 : 0.6)}
+          targetFps={40}
           onReady={() => setReady(true)}
           style={{ opacity: ready ? 1 : 0, transition: "opacity 1.6s ease" }}
         />
