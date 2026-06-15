@@ -25,6 +25,7 @@ uniform float uSun;
 uniform float uReveal;
 uniform float uSteps;
 uniform float uBeat;           // 0..1 musical pulse
+uniform sampler2D uNoise;      // baked 3D cloud noise (2D atlas: 64 slices, 8x8)
 
 float hash13(vec3 p){
   p = fract(p * 0.1031);
@@ -43,13 +44,30 @@ float vnoise3(vec3 p){
 }
 float fbm3(vec3 p){ float v=0.0,a=0.5; for(int i=0;i<3;i++){ v+=a*vnoise3(p); p*=2.03; a*=0.5; } return v; }
 float hg(float c, float g){ float g2=g*g; return (1.0-g2)/(4.0*PI*pow(max(1.0+g2-2.0*g*c,1e-3),1.5)); }
+// baked 3D noise sampled from the 2D atlas (1 lookup vs ~24 hashes per step)
+float atlasSlice(vec2 xy, float slice){
+  float col = mod(slice, 8.0);
+  float row = floor(slice / 8.0);
+  vec2 tc = (xy * 63.0 + 0.5) / 64.0;          // texel centers within the 64px slice
+  vec2 uv = (vec2(col, row) + tc) / 8.0;
+  return texture2D(uNoise, uv).r;
+}
+float noise3D(vec3 p){
+  p = fract(p);                                // tileable
+  float zf = p.z * 64.0;
+  float z0 = floor(zf);
+  float fz = zf - z0;
+  float a = atlasSlice(p.xy, mod(z0, 64.0));
+  float b = atlasSlice(p.xy, mod(z0 + 1.0, 64.0));
+  return mix(a, b, fz);                         // trilinear (bilinear xy + lerp z)
+}
 float density(vec3 p){
   p.xz += uDrift*uTime*0.12; p.y += uTime*0.015;
-  return clamp(fbm3(p*0.62) - (0.46 - 0.22*uHaze), 0.0, 1.0);
+  return clamp(noise3D(p * 0.156) - (0.52 - 0.22*uHaze), 0.0, 1.0);
 }
 float densityLight(vec3 p){
   p.xz += uDrift*uTime*0.12; p.y += uTime*0.015;
-  return clamp(vnoise3(p*0.62) - (0.46 - 0.22*uHaze), 0.0, 1.0);
+  return clamp(noise3D(p * 0.156) - (0.52 - 0.22*uHaze), 0.0, 1.0);
 }
 
 void main(){

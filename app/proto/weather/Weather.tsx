@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ShaderCanvas, { type Uniforms } from "../_engine/ShaderCanvas";
 import GradientPoster from "../_engine/GradientPoster";
 import Provenance from "../_components/Provenance";
 import TrackEmbed, { type Playhead } from "../_audio/TrackEmbed";
+import { buildNoiseAtlas } from "../_lib/noise3d";
 import { useCapabilities } from "../_hooks/useCapabilities";
 import {
   usePointerField,
@@ -32,8 +33,19 @@ export default function Weather({ geo }: { geo: Geo }) {
   const blockRef = useRef<HTMLDivElement>(null);
   const playhead = useRef<Playhead>({ time: 0, playing: false, readAt: 0 });
   const sunOverride = useRef<number | null>(null);
+  const noiseRef = useRef<HTMLCanvasElement | null>(null);
   const [ready, setReady] = useState(false);
   const [scrubbing, setScrubbing] = useState(false);
+
+  // Bake the 3D cloud-noise atlas once (the shader samples it instead of
+  // computing fbm per step). Runs before the deferred WebGL init reads it.
+  useEffect(() => {
+    const cv = buildNoiseAtlas();
+    if (cv) {
+      cv.dataset.dirty = "1";
+      noiseRef.current = cv;
+    }
+  }, []);
 
   const [uniforms] = useState<Uniforms>(() => ({
     uPointer: { value: [0.5, 0.5] },
@@ -107,6 +119,7 @@ export default function Weather({ geo }: { geo: Geo }) {
           fragment={weatherFragment}
           uniforms={uniforms}
           onFrame={onFrame}
+          textures={() => ({ uNoise: noiseRef.current })}
           dprCap={Math.min(caps!.dprCap, caps!.tier === "high" ? 0.6 : 0.45)}
           targetFps={30}
           onReady={() => setReady(true)}
