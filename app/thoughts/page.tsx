@@ -11,7 +11,7 @@ export default function ThoughtsIndex() {
   const thoughts = getAllThoughts();
   return (
     <div className="thoughts-wrap">
-      <Link href="/proto/weather" className="thoughts-back">
+      <Link href="/" className="thoughts-back">
         ← Phil Hie
       </Link>
       <h1 className="thoughts-title">Thoughts</h1>
