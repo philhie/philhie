@@ -11,13 +11,20 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 
-const VIDEO_ID = "v-QTu118AFw"; // Rick Ross — "Stay Schemin'" (official)
+// Set from the song-research pick. START_SEC skips any spoken / sound-effect /
+// silent intro and is also the loop point — we re-seek here when the track ends
+// so the intro never replays.
+const VIDEO_ID = "-ZBUXDQ4leM"; // Kanye West — "Flashing Lights" (extended intro)
+const START_SEC = 10; // loop start: into the string/synth build
+const LOOP_END = 55; //  loop end: stay inside the wordless cinematic intro
 
 interface YTPlayer {
   mute: () => void;
   unMute: () => void;
   setVolume: (v: number) => void;
   playVideo: () => void;
+  seekTo: (seconds: number, allowSeekAhead: boolean) => void;
+  getCurrentTime: () => number;
   destroy: () => void;
 }
 interface YTNamespace {
@@ -54,15 +61,22 @@ export default function TrackEmbed({ accent = "#e8a14c" }: { accent?: string }) 
           modestbranding: 1,
           playsinline: 1,
           rel: 0,
-          loop: 1,
-          playlist: VIDEO_ID,
+          start: START_SEC,
           mute: 1,
         },
         events: {
           onReady: (e: { target: YTPlayer }) => {
             e.target.mute();
+            if (START_SEC > 0) e.target.seekTo(START_SEC, true);
             e.target.playVideo();
             setReady(true);
+          },
+          onStateChange: (e: { data: number; target: YTPlayer }) => {
+            // 0 = ENDED → loop back to the start point (never replays the intro)
+            if (e.data === 0) {
+              e.target.seekTo(START_SEC, true);
+              e.target.playVideo();
+            }
           },
         },
       });
@@ -84,8 +98,18 @@ export default function TrackEmbed({ accent = "#e8a14c" }: { accent?: string }) 
       }
     }
 
+    // Keep playback inside the wordless cinematic intro (loop window).
+    const loopId = window.setInterval(() => {
+      const pl = playerRef.current;
+      if (pl && pl.getCurrentTime) {
+        const ct = pl.getCurrentTime();
+        if (ct >= LOOP_END || ct < START_SEC - 1.5) pl.seekTo(START_SEC, true);
+      }
+    }, 250);
+
     return () => {
       cancelled = true;
+      clearInterval(loopId);
       try {
         playerRef.current?.destroy();
       } catch {

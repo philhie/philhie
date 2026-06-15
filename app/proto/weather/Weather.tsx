@@ -92,7 +92,7 @@ export default function Weather({ geo }: { geo: Geo }) {
           fragment={weatherFragment}
           uniforms={uniforms}
           onFrame={onFrame}
-          dprCap={Math.min(caps!.dprCap, caps!.tier === "high" ? 0.85 : 0.6)}
+          dprCap={Math.min(caps!.dprCap, caps!.tier === "high" ? 0.95 : 0.72)}
           targetFps={40}
           onReady={() => setReady(true)}
           style={{ opacity: ready ? 1 : 0, transition: "opacity 1.6s ease" }}
