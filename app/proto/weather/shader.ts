@@ -24,6 +24,8 @@ uniform vec2  uDrift;
 uniform float uSun;
 uniform float uReveal;
 uniform float uSteps;
+uniform sampler2D uNameMask;   // screen-space mask of "PHIL HIE"
+uniform float uBeat;           // 0..1 musical pulse
 
 float hash13(vec3 p){
   p = fract(p * 0.1031);
@@ -40,7 +42,7 @@ float vnoise3(vec3 p){
   return mix(mix(mix(n000,n100,f.x), mix(n010,n110,f.x), f.y),
              mix(mix(n001,n101,f.x), mix(n011,n111,f.x), f.y), f.z);
 }
-float fbm3(vec3 p){ float v=0.0,a=0.5; for(int i=0;i<3;i++){ v+=a*vnoise3(p); p*=2.03; a*=0.5; } return v; }
+float fbm3(vec3 p){ float v=0.0,a=0.5; for(int i=0;i<4;i++){ v+=a*vnoise3(p); p*=2.03; a*=0.5; } return v; }
 float hg(float c, float g){ float g2=g*g; return (1.0-g2)/(4.0*PI*pow(max(1.0+g2-2.0*g*c,1e-3),1.5)); }
 float density(vec3 p){
   p.xz += uDrift*uTime*0.12; p.y += uTime*0.015;
@@ -138,6 +140,23 @@ void main(){
   float perp = length(rel + normalize(vec2(1.0, -0.35)) * along);
   float streak = smoothstep(0.012, 0.0, perp) * (1.0 - smoothstep(0.0, 0.32, along)) * smoothstep(0.0, 0.04, along);
   col += vec3(1.0, 0.96, 0.9) * streak * step(ph, 0.16) * step(0.55, seed) * night * 2.0;
+
+  // ---- the name, carved OUT of the weather (letters made of light) ----
+  vec2 nuv = vec2(uv.x, 1.0 - uv.y);            // screen → canvas-mask space
+  float nameA = texture2D(uNameMask, nuv).r;
+  vec3 fill = sunCol * (0.5 + 0.8 * hgt);        // warm by day/dawn
+  fill = mix(fill, vec3(0.80, 0.86, 1.0), night * 0.7); // cool/white at night
+  fill += scattered * 1.3;                       // pick up the cloud scatter
+  fill += vec3(0.9, 0.95, 1.0) * stars * 2.2;    // stars shimmer within (night)
+  float godray = 0.55 + 0.7 * pow(max(dot(rd, sunDir), 0.0), 3.0) * hgt;
+  fill *= godray * (1.0 + uBeat * 0.22);         // god-rays rake through + beat
+  float halo = texture2D(uNameMask, nuv + vec2(0.0045, 0.0)).r
+             + texture2D(uNameMask, nuv - vec2(0.0045, 0.0)).r
+             + texture2D(uNameMask, nuv + vec2(0.0, 0.008)).r
+             + texture2D(uNameMask, nuv - vec2(0.0, 0.008)).r;
+  halo = clamp(halo * 0.25 - nameA, 0.0, 1.0);   // soft ring just outside glyphs
+  col = mix(col, fill, nameA);
+  col += fill * halo * 0.22;
 
   col = tonemap(col * 1.1);
   col *= vignette(uv, 0.26, 1.0);

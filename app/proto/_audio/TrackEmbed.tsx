@@ -2,25 +2,26 @@
 
 /**
  * The real track, embedded. A hidden YouTube IFrame player streams the official
- * recording (the license travels with the embed). Muted autoplay-loop satisfies
- * autoplay policy; the "listen" button unmutes on a user gesture. We read only
- * player state — never reproduce the recording.
- *
- * Swap VIDEO_ID if a cleaner official upload is preferred.
+ * recording (the license travels with the embed). It autoplays MUTED from 0:00
+ * (browser policy), loops the whole song, and unmutes the instant the visitor
+ * does anything (move / click / scroll / key / touch). We only read playback
+ * state (position + playing) — never reproduce the recording.
  */
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 
-// Set from the song-research pick. START_SEC skips any spoken / sound-effect /
-// silent intro and is also the loop point — we re-seek here when the track ends
-// so the intro never replays.
 const VIDEO_ID = "-ZBUXDQ4leM"; // Kanye West — "Flashing Lights" (extended intro)
-const START_SEC = 10; // loop start: into the string/synth build
-const LOOP_END = 55; //  loop end: stay inside the wordless cinematic intro
+
+export interface Playhead {
+  time: number; // seconds into the track at readAt
+  playing: boolean;
+  readAt: number; // performance.now() when read (for interpolation)
+}
 
 interface YTPlayer {
   mute: () => void;
   unMute: () => void;
+  isMuted: () => boolean;
   setVolume: (v: number) => void;
   playVideo: () => void;
   seekTo: (seconds: number, allowSeekAhead: boolean) => void;
@@ -28,10 +29,7 @@ interface YTPlayer {
   destroy: () => void;
 }
 interface YTNamespace {
-  Player: new (
-    el: HTMLElement,
-    opts: Record<string, unknown>,
-  ) => YTPlayer;
+  Player: new (el: HTMLElement, opts: Record<string, unknown>) => YTPlayer;
 }
 declare global {
   interface Window {
@@ -40,41 +38,41 @@ declare global {
   }
 }
 
-export default function TrackEmbed({ accent = "#e8a14c" }: { accent?: string }) {
+export default function TrackEmbed({
+  accent = "#e8a14c",
+  playheadRef,
+}: {
+  accent?: string;
+  playheadRef?: React.RefObject<Playhead>;
+}) {
   const mountRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YTPlayer | null>(null);
-  const [on, setOn] = useState(false);
+  const playingRef = useRef(false);
+  const [on, setOn] = useState(false); // sound on (unmuted)
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+    let unmuted = false;
 
     const init = () => {
       if (cancelled || !mountRef.current || !window.YT) return;
       playerRef.current = new window.YT.Player(mountRef.current, {
         videoId: VIDEO_ID,
         playerVars: {
-          autoplay: 1,
-          controls: 0,
-          disablekb: 1,
-          fs: 0,
-          modestbranding: 1,
-          playsinline: 1,
-          rel: 0,
-          start: START_SEC,
-          mute: 1,
+          autoplay: 1, controls: 0, disablekb: 1, fs: 0,
+          modestbranding: 1, playsinline: 1, rel: 0, mute: 1,
         },
         events: {
           onReady: (e: { target: YTPlayer }) => {
             e.target.mute();
-            if (START_SEC > 0) e.target.seekTo(START_SEC, true);
             e.target.playVideo();
             setReady(true);
           },
           onStateChange: (e: { data: number; target: YTPlayer }) => {
-            // 0 = ENDED → loop back to the start point (never replays the intro)
-            if (e.data === 0) {
-              e.target.seekTo(START_SEC, true);
+            playingRef.current = e.data === 1;
+            if (e.data === 0) { // ENDED → loop the whole song
+              e.target.seekTo(0, true);
               e.target.playVideo();
             }
           },
@@ -82,14 +80,10 @@ export default function TrackEmbed({ accent = "#e8a14c" }: { accent?: string }) 
       });
     };
 
-    if (window.YT?.Player) {
-      init();
-    } else {
+    if (window.YT?.Player) init();
+    else {
       const prev = window.onYouTubeIframeAPIReady;
-      window.onYouTubeIframeAPIReady = () => {
-        prev?.();
-        init();
-      };
+      window.onYouTubeIframeAPIReady = () => { prev?.(); init(); };
       if (!document.getElementById("yt-iframe-api")) {
         const s = document.createElement("script");
         s.id = "yt-iframe-api";
@@ -98,63 +92,59 @@ export default function TrackEmbed({ accent = "#e8a14c" }: { accent?: string }) 
       }
     }
 
-    // Keep playback inside the wordless cinematic intro (loop window).
-    const loopId = window.setInterval(() => {
-      const pl = playerRef.current;
-      if (pl && pl.getCurrentTime) {
-        const ct = pl.getCurrentTime();
-        if (ct >= LOOP_END || ct < START_SEC - 1.5) pl.seekTo(START_SEC, true);
+    // Unmute on the first real interaction (browser-legal "auto" sound).
+    const events = ["pointerdown", "keydown", "wheel", "touchstart", "pointermove"];
+    const onFirstGesture = () => {
+      if (unmuted) return;
+      const p = playerRef.current;
+      if (!p) return;
+      unmuted = true;
+      p.unMute();
+      p.setVolume(70);
+      p.playVideo();
+      setOn(true);
+      events.forEach((ev) => window.removeEventListener(ev, onFirstGesture));
+    };
+    events.forEach((ev) =>
+      window.addEventListener(ev, onFirstGesture, { passive: true, once: false }),
+    );
+
+    // Publish the playhead for the beat clock.
+    const poll = window.setInterval(() => {
+      const p = playerRef.current;
+      if (p?.getCurrentTime && playheadRef?.current) {
+        playheadRef.current.time = p.getCurrentTime();
+        playheadRef.current.playing = playingRef.current;
+        playheadRef.current.readAt = performance.now();
       }
-    }, 250);
+    }, 120);
 
     return () => {
       cancelled = true;
-      clearInterval(loopId);
-      try {
-        playerRef.current?.destroy();
-      } catch {
-        /* noop */
-      }
+      clearInterval(poll);
+      events.forEach((ev) => window.removeEventListener(ev, onFirstGesture));
+      try { playerRef.current?.destroy(); } catch { /* noop */ }
     };
-  }, []);
+  }, [playheadRef]);
 
   const toggle = () => {
     const p = playerRef.current;
     if (!p) return;
-    if (on) {
-      p.mute();
-      setOn(false);
-    } else {
-      p.unMute();
-      p.setVolume(72);
-      p.playVideo();
-      setOn(true);
-    }
+    if (on) { p.mute(); setOn(false); }
+    else { p.unMute(); p.setVolume(70); p.playVideo(); setOn(true); }
   };
 
   return (
     <>
-      {/* hidden player (kept on-screen at 1px so autoplay isn't throttled) */}
       <div
         aria-hidden
-        style={{
-          position: "fixed",
-          width: 1,
-          height: 1,
-          bottom: 0,
-          right: 0,
-          opacity: 0.001,
-          overflow: "hidden",
-          pointerEvents: "none",
-          zIndex: 0,
-        }}
+        style={{ position: "fixed", width: 1, height: 1, bottom: 0, right: 0, opacity: 0.001, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}
       >
         <div ref={mountRef} />
       </div>
-
       <button onClick={toggle} aria-pressed={on} disabled={!ready} style={btn(accent, on)}>
         <span style={dot(accent, on)} />
-        {on ? "playing" : "listen"}
+        {on ? "sound on" : "listen"}
       </button>
     </>
   );
@@ -179,7 +169,6 @@ const btn = (accent: string, on: boolean): CSSProperties => ({
   color: on ? accent : "rgba(255,255,255,0.4)",
   transition: "color 0.3s ease",
 });
-
 const dot = (accent: string, on: boolean): CSSProperties => ({
   width: 6,
   height: 6,

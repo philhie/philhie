@@ -1,10 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ShaderCanvas, { type Uniforms } from "../_engine/ShaderCanvas";
 import GradientPoster from "../_engine/GradientPoster";
 import Provenance from "../_components/Provenance";
-import TrackEmbed from "../_audio/TrackEmbed";
+import TrackEmbed, { type Playhead } from "../_audio/TrackEmbed";
 import { useCapabilities } from "../_hooks/useCapabilities";
 import {
   usePointerField,
@@ -17,6 +17,7 @@ import { weatherFragment } from "./shader";
 
 const ACCENT = "#e8a14c";
 const TWO_PI = Math.PI * 2;
+const BPM = 90; // Flashing Lights ≈ 90 BPM
 
 export default function Weather({ geo }: { geo: Geo }) {
   const caps = useCapabilities();
@@ -29,7 +30,14 @@ export default function Weather({ geo }: { geo: Geo }) {
   const phase0 = useRef<number | null>(null);
   const lastWarm = useRef(-1);
   const blockRef = useRef<HTMLDivElement>(null);
+  const h1Ref = useRef<HTMLHeadingElement>(null);
+  const playhead = useRef<Playhead>({ time: 0, playing: false, readAt: 0 });
+  const sunOverride = useRef<number | null>(null);
   const [ready, setReady] = useState(false);
+  const [scrubbing, setScrubbing] = useState(false);
+
+  // Offscreen full-viewport canvas holding the "PHIL HIE" mask the shader carves.
+  const maskRef = useRef<HTMLCanvasElement | null>(null);
 
   const [uniforms] = useState<Uniforms>(() => ({
     uPointer: { value: [0.5, 0.5] },
@@ -41,7 +49,53 @@ export default function Weather({ geo }: { geo: Geo }) {
     uSun: { value: 0.4 },
     uReveal: { value: 0 },
     uSteps: { value: 28 },
+    uBeat: { value: 0 },
   }));
+
+  // Draw the name into the mask canvas at the h1's exact screen rect.
+  useEffect(() => {
+    if (!maskRef.current) maskRef.current = document.createElement("canvas");
+    const cv = maskRef.current;
+    const draw = () => {
+      const h1 = h1Ref.current;
+      if (!h1) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const W = window.innerWidth;
+      const H = window.innerHeight;
+      cv.width = Math.max(1, Math.floor(W * dpr));
+      cv.height = Math.max(1, Math.floor(H * dpr));
+      const ctx = cv.getContext("2d");
+      if (!ctx) return;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, W, H);
+      const r = h1.getBoundingClientRect();
+      const cs = getComputedStyle(h1);
+      ctx.fillStyle = "#fff";
+      ctx.textBaseline = "top";
+      ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+      const spaced = ctx as CanvasRenderingContext2D & { letterSpacing?: string };
+      try { spaced.letterSpacing = cs.letterSpacing; } catch { /* older browsers */ }
+      ctx.fillText("PHIL HIE", r.left, r.top);
+      cv.dataset.dirty = "1";
+    };
+    let raf = 0;
+    const onResize = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(draw);
+    };
+    draw();
+    document.fonts?.ready?.then(draw).catch(() => {});
+    const t1 = window.setTimeout(draw, 350);
+    const t2 = window.setTimeout(draw, 1200);
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      cancelAnimationFrame(raf);
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, []);
 
   const onFrame = (u: Uniforms, t: number, dt: number) => {
     const p = pointer.read(dt);
@@ -49,13 +103,23 @@ export default function Weather({ geo }: { geo: Geo }) {
     const dim = empathy.read();
     reveal.current += (1 - reveal.current) * Math.min(1, dt * 0.9);
 
-    // seed the cycle near the visitor's real local time, then drift slowly
     if (phase0.current == null) {
       phase0.current = Math.asin(Math.max(-1, Math.min(1, 2 * s.daylight - 1)));
     }
-    const sun = 0.5 + 0.5 * Math.sin((t * TWO_PI) / 90 + phase0.current);
+    const sun =
+      sunOverride.current != null
+        ? sunOverride.current
+        : 0.5 + 0.5 * Math.sin((t * TWO_PI) / 90 + phase0.current);
     const sunAng = -0.35 + (Math.PI + 0.7) * sun;
     const warm = Math.max(0, Math.sin(sunAng));
+
+    let beat = 0;
+    const ph = playhead.current;
+    if (ph.playing) {
+      const est = ph.time + (performance.now() - ph.readAt) / 1000;
+      const frac = (est * (BPM / 60)) % 1;
+      beat = Math.pow(1 - frac, 1.6);
+    }
 
     u.uPointer.value = [p.x, p.y];
     u.uPointerInfluence.value = p.influence * (caps?.tier === "high" ? 1 : 0.6);
@@ -65,9 +129,9 @@ export default function Weather({ geo }: { geo: Geo }) {
     u.uDrift.value = s.drift;
     u.uSun.value = sun;
     u.uSteps.value = caps?.tier === "high" ? 30 : 20;
+    u.uBeat.value = beat;
     u.uReveal.value = reveal.current * dim;
 
-    // shift the name's glow warm(day)→cool(night) — one cheap CSS var, throttled
     if (blockRef.current && Math.abs(warm - lastWarm.current) > 0.01) {
       blockRef.current.style.setProperty("--warm", warm.toFixed(3));
       lastWarm.current = warm;
@@ -92,7 +156,8 @@ export default function Weather({ geo }: { geo: Geo }) {
           fragment={weatherFragment}
           uniforms={uniforms}
           onFrame={onFrame}
-          dprCap={Math.min(caps!.dprCap, caps!.tier === "high" ? 0.95 : 0.72)}
+          textures={() => ({ uNameMask: maskRef.current })}
+          dprCap={Math.min(caps!.dprCap, caps!.tier === "high" ? 1.5 : 0.72)}
           targetFps={40}
           onReady={() => setReady(true)}
           style={{ opacity: ready ? 1 : 0, transition: "opacity 1.6s ease" }}
@@ -100,7 +165,17 @@ export default function Weather({ geo }: { geo: Geo }) {
       )}
 
       <main ref={blockRef} style={block}>
-        <h1 className="weather-name">PHIL&nbsp;HIE</h1>
+        <h1
+          ref={h1Ref}
+          className="weather-name"
+          style={
+            ready
+              ? { color: "rgba(253,248,242,0.16)", textShadow: "none" }
+              : undefined
+          }
+        >
+          PHIL&nbsp;HIE
+        </h1>
         <div style={{ marginTop: "clamp(1.5rem, 3vh, 2.5rem)" }}>
           <Provenance accent={ACCENT} />
         </div>
@@ -111,18 +186,37 @@ export default function Weather({ geo }: { geo: Geo }) {
         </nav>
       </main>
 
-      {geo.city && (
-        <p style={skyTag}>
-          your sky · {geo.city.toLowerCase()}
-        </p>
-      )}
+      {geo.city && <p style={skyTag}>your sky · {geo.city.toLowerCase()}</p>}
 
-      <TrackEmbed accent={ACCENT} />
+      {/* dev: drag to set the sky phase (jump to night); doubles as frame-audit */}
+      <div style={scrub}>
+        <input
+          type="range"
+          min={0}
+          max={1}
+          step={0.001}
+          defaultValue={0.4}
+          onInput={(e) => {
+            sunOverride.current = parseFloat((e.target as HTMLInputElement).value);
+            if (!scrubbing) setScrubbing(true);
+          }}
+          aria-label="sky time"
+          style={{ width: "min(40vw, 16rem)", accentColor: ACCENT, opacity: 0.5 }}
+        />
+        {scrubbing && (
+          <button
+            onClick={() => { sunOverride.current = null; setScrubbing(false); }}
+            style={autoBtn}
+          >
+            auto
+          </button>
+        )}
+      </div>
+
+      <TrackEmbed accent={ACCENT} playheadRef={playhead} />
     </>
   );
 }
-
-/* ------------------------------- styles ------------------------------- */
 
 const block: React.CSSProperties = {
   position: "fixed",
@@ -131,13 +225,11 @@ const block: React.CSSProperties = {
   zIndex: 2,
   maxWidth: "min(38rem, 90vw)",
 };
-
 const links: React.CSSProperties = {
   display: "flex",
   gap: "1.75rem",
   marginTop: "clamp(1.5rem, 3vh, 2.25rem)",
 };
-
 const link: React.CSSProperties = {
   fontFamily: "var(--font-geist-mono), monospace",
   fontSize: "0.7rem",
@@ -146,7 +238,6 @@ const link: React.CSSProperties = {
   color: "rgba(255,255,255,0.55)",
   textDecoration: "none",
 };
-
 const skyTag: React.CSSProperties = {
   position: "fixed",
   top: "clamp(1.5rem, 4vh, 2.5rem)",
@@ -157,4 +248,24 @@ const skyTag: React.CSSProperties = {
   letterSpacing: "0.22em",
   textTransform: "uppercase",
   color: "rgba(232,161,76,0.55)",
+};
+const scrub: React.CSSProperties = {
+  position: "fixed",
+  top: "clamp(1rem, 2.5vh, 1.75rem)",
+  left: "50%",
+  transform: "translateX(-50%)",
+  zIndex: 30,
+  display: "flex",
+  alignItems: "center",
+  gap: "0.75rem",
+};
+const autoBtn: React.CSSProperties = {
+  background: "none",
+  border: "none",
+  cursor: "pointer",
+  fontFamily: "var(--font-geist-mono), monospace",
+  fontSize: "0.6rem",
+  letterSpacing: "0.2em",
+  textTransform: "uppercase",
+  color: "rgba(255,255,255,0.45)",
 };

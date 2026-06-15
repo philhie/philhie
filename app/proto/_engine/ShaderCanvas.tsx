@@ -17,7 +17,7 @@
  */
 
 import { useEffect, useRef } from "react";
-import { Renderer, Triangle, Program, Mesh } from "ogl";
+import { Renderer, Triangle, Program, Mesh, Texture } from "ogl";
 import { FULLSCREEN_VERT } from "./glsl";
 
 export type Uniforms = Record<string, { value: unknown }>;
@@ -28,6 +28,8 @@ export interface ShaderCanvasProps {
   uniforms?: Uniforms;
   /** Called every frame to mutate uniform values. t = seconds, dt = seconds. */
   onFrame?: (u: Uniforms, t: number, dt: number) => void;
+  /** Lazily provide canvas-backed textures (uniform name → canvas). Called once at init. */
+  textures?: () => Record<string, HTMLCanvasElement | null | undefined>;
   /** Render-buffer DPR ceiling (from capability detection). */
   dprCap?: number;
   /** Cap the render rate (fps). 0 = uncapped. Big win for slow scenes on 120Hz. */
@@ -54,6 +56,7 @@ export default function ShaderCanvas({
   fragment,
   uniforms,
   onFrame,
+  textures,
   dprCap = 1,
   targetFps = 0,
   paused = false,
@@ -64,6 +67,8 @@ export default function ShaderCanvas({
   const containerRef = useRef<HTMLDivElement>(null);
   const onFrameRef = useRef(onFrame);
   onFrameRef.current = onFrame;
+  const texturesRef = useRef(textures);
+  texturesRef.current = textures;
   const pausedRef = useRef(paused);
   pausedRef.current = paused;
   const onReadyRef = useRef(onReady);
@@ -116,6 +121,7 @@ export default function ShaderCanvas({
       canvas.style.height = "100%";
       container.appendChild(canvas);
 
+      const canvasTextures: Array<{ tex: Texture; src: HTMLCanvasElement }> = [];
       try {
         const geometry = new Triangle(gl);
         const program = new Program(gl, {
@@ -124,6 +130,19 @@ export default function ShaderCanvas({
           uniforms: u,
         });
         mesh = new Mesh(gl, { geometry, program });
+        // Canvas-backed textures (e.g. the name mask), provided lazily so the
+        // parent can keep them in a ref. dataset.dirty="1" triggers re-upload.
+        const texMap = texturesRef.current ? texturesRef.current() : null;
+        if (texMap) {
+          for (const key in texMap) {
+            const src = texMap[key];
+            if (src instanceof HTMLCanvasElement) {
+              const tex = new Texture(gl, { image: src, generateMipmaps: false, flipY: false });
+              canvasTextures.push({ tex, src });
+              u[key] = { value: tex };
+            }
+          }
+        }
       } catch {
         // Shader failed to compile/link — fall back to the poster underneath.
         gl.getExtension("WEBGL_lose_context")?.loseContext();
@@ -163,6 +182,13 @@ export default function ShaderCanvas({
         const t = now / 1000;
         u.uTime.value = t;
         onFrameRef.current?.(u, t, dt);
+        for (const ct of canvasTextures) {
+          if (ct.src.dataset.dirty === "1") {
+            ct.tex.image = ct.src;
+            ct.tex.needsUpdate = true;
+            ct.src.dataset.dirty = "";
+          }
+        }
         if (renderer && mesh) renderer.render({ scene: mesh });
 
         if (!ready) {
