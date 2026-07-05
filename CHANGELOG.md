@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.0.0] - 2026-07-05
+
+The relaunch. A complete redesign and design-system takeover: the WebGL "weather" hero is gone, replaced by a quiet-luxury founder site built on shadcn/ui. Monochrome, precise, typographic. The record (Goldman Sachs, Grex, Adepto, Avelios, and a stealth company) reads as a clean editorial page.
+
+### Added
+- A full shadcn/ui design system (Base UI primitives, Tailwind v4 CSS-first tokens) with the palette taken over entirely: monochrome, soft-black ink (#1d1d1f), Apple-grade neutral grays, and a true OLED-black "after-hours" dark theme (next-themes).
+- Satoshi as the one typeface: a self-hosted variable neo-grotesque at light-to-medium weights. Optical left-alignment cancels the display glyph's side-bearing so the type sits ink-flush with the gutter.
+- The masthead: a San Francisco dateline that ticks the city's local time, the monumental name, "Building" (a link to the sealed page), and the follow row (X, LinkedIn, GitHub) at the bottom of the hero.
+- Background — the five-role record as a contents page. Receipts reveal on hover/tap and stay in the DOM for accessibility and machine-readability; rows fade up as they enter the viewport.
+- A CSS "focus pull" entrance: the name resolves from a soft blur, then the statement and follow row settle. Server-rendered (LCP-safe), reduced-motion aware.
+- Native View Transitions morphing the "Phil Hie" masthead across / ↔ /thoughts ↔ /stealth.
+- A sealed /stealth page, reached from "Building".
+- A restyled soundtrack toggle (muted YouTube that unmutes on the first interaction).
+- A machine-experience layer: schema.org Person JSON-LD (alumniOf Goldman Sachs, the full role graph, social profiles) and strict semantic HTML.
+
+### Changed
+- The /thoughts reading room moved from the dark serif room to the light editorial system (Satoshi titles, Fraunces prose).
+- The Open Graph image, favicon, and Apple touch icon rebuilt to the monochrome identity.
+- The it.philhie.com subdomain restyled to match.
+
+### Removed
+- The entire WebGL layer: the OGL single-shader engine, gradient poster, baked noise atlas, capability/pointer/empathy hooks, the IP-geo reader, and the dependencies (ogl, three, @react-three/*, postprocessing).
+- Stale test files that referenced deleted modules.
+
 ## [1.0.0.0] - 2026-06-15
 
 The relaunch. The site is rebuilt from scratch around one idea: a name made of weather.

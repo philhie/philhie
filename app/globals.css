@@ -1,42 +1,334 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* =========================================================================
+   Design tokens — quiet luxury. Monochrome, soft-black ink, Apple-grade grays.
+   Light is canonical; .dark is a true OLED black. One typeface: Satoshi.
+   ========================================================================= */
 
 :root {
-  --background: #000000;
-  --foreground: #ffffff;
+  /* Raw palette */
+  --paper: #ffffff;
+  --ink: #1d1d1f; /* soft black, not harsh #000 */
+  --accent: #1d1d1f; /* monochrome — the "accent" is ink itself */
+  --signal: var(--accent); /* back-compat alias (was red; now ink) */
+  --hairline: #e6e6e4;
+  --mono-muted: #6e6e73; /* Apple secondary label */
+
+  /* shadcn semantic tokens (light / canonical) */
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--paper);
+  --card-foreground: var(--ink);
+  --popover: var(--paper);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--paper);
+  --secondary: #f5f5f7;
+  --secondary-foreground: var(--ink);
+  --muted: #f5f5f7;
+  --muted-foreground: var(--mono-muted);
+  --accent-color: #f5f5f7;
+  --accent-foreground: var(--ink);
+  --destructive: #b3261e;
+  --border: var(--hairline);
+  --input: var(--hairline);
+  --ring: color-mix(in oklab, var(--ink) 40%, transparent);
+
+  --chart-1: var(--ink);
+  --chart-2: #5c5c60;
+  --chart-3: #8a8a8f;
+  --chart-4: #b0b0b5;
+  --chart-5: #d2d2d7;
+
+  --sidebar: var(--paper);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--ink);
+  --sidebar-primary-foreground: var(--paper);
+  --sidebar-accent: #f5f5f7;
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--hairline);
+  --sidebar-ring: var(--ring);
+
+  --radius: 0.75rem; /* Apple-soft */
+}
+
+.dark {
+  --paper: #000000; /* true OLED black */
+  --ink: #f5f5f7;
+  --accent: #f5f5f7;
+  --signal: var(--accent);
+  --hairline: #2a2a2c;
+  --mono-muted: #86868b;
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: #0a0a0a;
+  --card-foreground: var(--ink);
+  --popover: #0a0a0a;
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: #000000;
+  --secondary: #1c1c1e;
+  --secondary-foreground: var(--ink);
+  --muted: #1c1c1e;
+  --muted-foreground: var(--mono-muted);
+  --accent-color: #1c1c1e;
+  --accent-foreground: var(--ink);
+  --destructive: #ff453a;
+  --border: var(--hairline);
+  --input: var(--hairline);
+  --ring: color-mix(in oklab, var(--ink) 45%, transparent);
+
+  --chart-1: var(--ink);
+  --chart-2: #c7c7cc;
+  --chart-3: #98989d;
+  --chart-4: #636366;
+  --chart-5: #3a3a3c;
+
+  --sidebar: #0a0a0a;
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--ink);
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: #1c1c1e;
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--hairline);
+  --sidebar-ring: var(--ring);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent-color);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Semantic extras: bg-ink / text-ink / bg-paper / border-hairline / text-mono-muted */
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
+  --color-hairline: var(--hairline);
+  --color-mono-muted: var(--mono-muted);
+  --color-accent-ink: var(--accent);
+  --color-signal: var(--signal);
+
+  /* One typeface — Satoshi. Mono only for code in long-form. */
+  --font-display: var(--font-satoshi), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-satoshi), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
+
+  /* Soft radii (Apple) */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+  --radius-4xl: 2.5rem;
+
+  /* Elegant type scale — lighter, airier */
+  --text-monument: clamp(3.25rem, 13.5vw, 12rem);
+  --text-monument--line-height: 0.95;
+  --text-display: clamp(2rem, 6vw, 4.5rem);
+  --text-display--line-height: 1;
+  --text-label: 0.6875rem;
+  --text-label--line-height: 1.2;
 }
 
-html,
-body {
-  background: #000;
-  color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
-  overflow: hidden;
-  touch-action: none;
-  overscroll-behavior: none;
+/* =========================================================================
+   Base
+   ========================================================================= */
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  ::selection {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  :focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--ink) 55%, transparent);
+    outline-offset: 3px;
+  }
 }
 
-/* Loading glow: visible during WebGL bundle download */
-.loading-glow {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background: radial-gradient(
-    circle at 50% 50%,
-    rgba(255, 255, 255, 0.02) 0%,
-    transparent 50%
-  );
-  animation: breathe 3s ease-in-out infinite;
+/* =========================================================================
+   Utilities
+   ========================================================================= */
+
+@layer utilities {
+  /* Optical left-alignment — cancels the glyph's left side-bearing so large
+     display type sits ink-flush with the gutter (Satoshi caps LSB ≈ 0.085em).
+     !important is required to beat the preflight/shadcn `h1 { margin: 0 }`
+     reset, which otherwise zeroes this out. */
+  .optical-left {
+    margin-left: -0.085em !important;
+  }
+  /* Small tracked label — refined, sans (not mono anymore) */
+  .label-mono {
+    font-family: var(--font-satoshi), ui-sans-serif, system-ui, sans-serif;
+    font-size: var(--text-label);
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--mono-muted);
+  }
+  .nums {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+  .rule-draw {
+    transform-origin: left;
+  }
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .rule-draw {
+        animation: rule-scale linear both;
+        animation-timeline: view();
+        animation-range: entry 0% cover 22%;
+      }
+      /* Content that fades up as it enters the viewport (Index rows). */
+      .reveal-up {
+        animation: reveal-up linear both;
+        animation-timeline: view();
+        animation-range: entry 2% entry 36%;
+      }
+    }
+  }
+  /* Underline that draws in on hover — matches text color (monochrome) */
+  .link-underline {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    background-size: 0% 1px;
+    transition: background-size 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .link-underline:hover,
+  .link-underline:focus-visible {
+    background-size: 100% 1px;
+  }
 }
 
-@keyframes breathe {
-  0%, 100% { opacity: 0; }
-  50% { opacity: 1; }
+@keyframes rule-scale {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =========================================================================
+   Hero entrance — the "focus pull". Pure CSS so the LCP name is real server
+   HTML (never invisible if JS is slow), and reduced-motion just shows it.
+   Delay is set per element via the --press-delay custom property.
+   ========================================================================= */
+@media (prefers-reduced-motion: no-preference) {
+  .press-in {
+    opacity: 0;
+    animation: press-in 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: var(--press-delay, 0s);
+  }
+  .press-in--focus {
+    animation-name: press-in-focus;
+    animation-duration: 1.15s;
+    will-change: opacity, transform, filter;
+  }
+}
+
+@keyframes press-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes press-in-focus {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+    filter: blur(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+/* =========================================================================
+   View Transitions — shared-element morph of the masthead + root cross-fade
+   ========================================================================= */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-group(masthead-title) {
+    animation-duration: 560ms;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 360ms;
+    animation-timing-function: ease;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
 }
