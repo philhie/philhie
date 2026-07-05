@@ -15,7 +15,7 @@ export default function ThoughtsIndex() {
         ← Phil Hie
       </Link>
       <h1 className="thoughts-title">Thoughts</h1>
-      <p className="thoughts-sub">My Beautiful Dark Twisted Mind</p>
+      <p className="thoughts-sub">Dispatches from the build</p>
 
       <ul className="thoughts-list">
         {thoughts.map((t) => (

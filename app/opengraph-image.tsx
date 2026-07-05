@@ -10,72 +10,67 @@ export default async function Image() {
     (
       <div
         style={{
-          background: "#000000",
+          background: "#ffffff",
           width: "100%",
           height: "100%",
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          padding: "72px 80px",
+          padding: "64px 72px",
           fontFamily: "system-ui, -apple-system, sans-serif",
         }}
       >
-        {/* Top: monogram */}
         <div
           style={{
             display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 48,
-            height: 48,
-            borderRadius: 10,
-            background: "#ffffff",
-            color: "#000000",
-            fontSize: 18,
-            fontWeight: 700,
-            letterSpacing: "-0.5px",
+            fontSize: 21,
+            letterSpacing: "5px",
+            color: "#6e6e73",
+            textTransform: "uppercase",
           }}
         >
-          ph
+          Phil Hie
         </div>
 
-        {/* Bottom: content */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ display: "flex", flexDirection: "column" }}>
           <div
             style={{
-              color: "#ffffff",
-              fontSize: 80,
-              fontWeight: 700,
-              lineHeight: 1,
-              letterSpacing: "-3px",
+              display: "flex",
+              color: "#1d1d1f",
+              fontSize: 184,
+              fontWeight: 500,
+              lineHeight: 0.95,
+              letterSpacing: "-6px",
             }}
           >
             Phil Hie
           </div>
           <div
             style={{
-              color: "#666666",
-              fontSize: 26,
-              fontWeight: 400,
-              lineHeight: 1.4,
-              maxWidth: 720,
+              display: "flex",
+              color: "#6e6e73",
+              fontSize: 40,
+              fontWeight: 300,
+              marginTop: 24,
             }}
           >
-            Building at the intersection of services and artificial intelligence.
+            Building.
           </div>
-          <div
-            style={{
-              color: "#333333",
-              fontSize: 18,
-              fontWeight: 400,
-              marginTop: 8,
-            }}
-          >
-            philhie.com
-          </div>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            fontSize: 20,
+            letterSpacing: "4px",
+            color: "#6e6e73",
+            textTransform: "uppercase",
+          }}
+        >
+          philhie.com
         </div>
       </div>
     ),
-    { ...size }
+    { ...size },
   );
 }
