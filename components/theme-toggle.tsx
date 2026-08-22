@@ -5,11 +5,16 @@ import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
 
 import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 
 /**
  * "After-hours" control — flips the canonical blinding-white monograph into
  * its inverted dark reading. Renders a stable placeholder until mounted so
  * next-themes can't cause a hydration mismatch.
+ *
+ * It positions itself. Every page wants it in the same top-right corner, and
+ * four hand-copied class strings had already drifted out of alignment with the
+ * content gutter — so the corner lives here, keyed off the `--edge-*` tokens.
  */
 export function ThemeToggle({ className }: { className?: string }) {
   const { resolvedTheme, setTheme } = useTheme();
@@ -20,7 +25,13 @@ export function ThemeToggle({ className }: { className?: string }) {
 
   return (
     <label
-      className={`label-mono inline-flex cursor-pointer select-none items-center gap-2 ${className ?? ""}`}
+      className={cn(
+        "label-mono fixed right-[var(--edge-x)] top-[var(--edge-top)] z-50",
+        // min-h-11/py-3 make a 44px target; -mt-3 cancels the growth so the
+        // glyphs sit exactly where they did before.
+        "-mt-3 inline-flex min-h-11 cursor-pointer touch-manipulation select-none items-center gap-2 py-3",
+        className,
+      )}
     >
       <span className="sr-only">After hours</span>
       <Sun

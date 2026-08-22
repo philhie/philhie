@@ -54,6 +54,21 @@
   --sidebar-ring: var(--ring);
 
   --radius: 0.75rem; /* Apple-soft */
+
+  /* -----------------------------------------------------------------------
+     Edges. One gutter value for every page, and edge insets that respect the
+     iOS notch / home indicator. Anything that touches a screen edge — the
+     content gutter and the two floating controls — reads from these, so the
+     controls can never drift out of alignment with the type again.
+     ----------------------------------------------------------------------- */
+  --gutter-x: clamp(1.5rem, 5vw, 5rem);
+  /* The vertical insets keep the curves the floating controls already used, and
+     add the safe area as a floor — so nothing moves on a desktop viewport,
+     where env() is 0. The horizontal inset is deliberately the content gutter:
+     the controls used to sit 9px inboard of the type they align with. */
+  --edge-top: max(clamp(1rem, 3vh, 1.75rem), env(safe-area-inset-top));
+  --edge-bottom: max(clamp(1.25rem, 4vh, 2.5rem), env(safe-area-inset-bottom));
+  --edge-x: max(var(--gutter-x), env(safe-area-inset-right));
 }
 
 .dark {
@@ -154,8 +169,14 @@
   --radius-3xl: 2rem;
   --radius-4xl: 2.5rem;
 
-  /* Elegant type scale — lighter, airier */
-  --text-monument: clamp(3.25rem, 13.5vw, 12rem);
+  /* Elegant type scale — lighter, airier.
+     `monument` is a slope + intercept curve, not a bare vw: a single `13.5vw`
+     bottomed out at its floor on every phone, so the name shrank to 52px and
+     filled two thirds of the line. This curve is identical to the old one from
+     1280px up (172.8px @1280, capped at 12rem) and much larger below it
+     (59px @320, 66px @375, 72px @430) — enough to fill ~80% of the measure
+     without ever reaching the wrap point. One token, no breakpoint. */
+  --text-monument: clamp(3.5rem, 11.85vw + 1.32rem, 12rem);
   --text-monument--line-height: 0.95;
   --text-display: clamp(2rem, 6vw, 4.5rem);
   --text-display--line-height: 1;
@@ -174,6 +195,12 @@
   html {
     @apply font-sans;
     -webkit-text-size-adjust: 100%;
+  }
+  /* Safety net. `clip`, not `hidden`, so a future `position: sticky` still
+     works — `overflow: hidden` on an ancestor silently kills it. */
+  html,
+  body {
+    overflow-x: clip;
   }
   body {
     @apply bg-background text-foreground antialiased;
@@ -242,9 +269,44 @@
     background-size: 0% 1px;
     transition: background-size 260ms cubic-bezier(0.22, 1, 0.36, 1);
   }
-  .link-underline:hover,
+  /* Hand-written, so it does NOT get Tailwind's automatic `(hover: hover)`
+     wrapper. Without the gate a tapped link keeps its underline forever. */
+  @media (hover: hover) and (pointer: fine) {
+    .link-underline:hover {
+      background-size: 100% 1px;
+    }
+  }
   .link-underline:focus-visible {
     background-size: 100% 1px;
+  }
+
+  /* Invisible 44px hit area on a visually small control. Generalised from the
+     one-off already on the shadcn Switch (`after:-inset-x-3 after:-inset-y-2`)
+     so every small target uses the same rule instead of its own guess. */
+  .tap-target {
+    position: relative;
+  }
+  .tap-target::after {
+    content: "";
+    position: absolute;
+    inset: -0.75rem -0.5rem;
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* =========================================================================
+   Phone. The only width-based breakpoint in the system — token overrides,
+   not layout rules. Layout adapts through `md:` utilities at the component.
+   ========================================================================= */
+@media (width < 48rem) {
+  :root {
+    /* 11px at 0.18em tracking is a desktop caption size. On a phone it reads
+       as noise; 12px at 0.14em is the same voice, legibly. */
+    --text-label: 0.75rem;
+  }
+  .label-mono {
+    letter-spacing: 0.14em;
   }
 }
 

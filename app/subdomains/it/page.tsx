@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 export default function ITPage() {
   return (
     <div className="flex min-h-svh items-center bg-background text-foreground">
-      <main className="mx-auto w-full max-w-2xl px-[clamp(1.5rem,6vw,3rem)] py-20">
+      <main className="mx-auto w-full max-w-2xl px-[var(--gutter-x)] pt-[calc(5rem+var(--edge-top))] pb-[calc(5rem+var(--edge-bottom))]">
         <p className="label-mono">Phil Hie · IT &amp; Technology</p>
 
         <h1 className="mt-6 font-display text-[clamp(2.5rem,9vw,5rem)] font-extrabold leading-[0.9] tracking-[-0.04em] text-foreground">
@@ -24,9 +24,9 @@ export default function ITPage() {
 
         <a
           href="https://philhie.com"
-          className="mt-8 inline-block font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-foreground link-underline transition-colors hover:text-signal"
+          className="tap-target mt-6 inline-flex min-h-11 items-center font-mono text-(length:--text-label) uppercase tracking-[0.16em] text-foreground transition-colors hover:text-signal"
         >
-          philhie.com ↗
+          <span className="link-underline">philhie.com ↗</span>
         </a>
       </main>
     </div>

@@ -18,8 +18,8 @@ export default function StealthPage() {
   const initialTime = localTimeString(HOME_TZ);
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-[88rem] flex-col px-[clamp(1.5rem,5vw,5rem)] pt-[clamp(2rem,6vh,3.5rem)] pb-[clamp(2rem,7vh,5rem)]">
-      <ThemeToggle className="fixed right-[clamp(1rem,4vw,2.5rem)] top-[clamp(1rem,3vh,1.75rem)] z-50" />
+    <main className="mx-auto flex min-h-svh max-w-[88rem] flex-col px-[var(--gutter-x)] pt-[max(clamp(2rem,6vh,3.5rem),calc(var(--edge-top)+2.75rem))] pb-[calc(clamp(2rem,7vh,5rem)+var(--edge-bottom))] md:pt-[clamp(2rem,6vh,3.5rem)]">
+      <ThemeToggle />
 
       <div>
         <Dateline place={HOME_CITY} timezone={HOME_TZ} initialTime={initialTime} />
@@ -39,12 +39,12 @@ export default function StealthPage() {
         </p>
       </div>
 
-      <footer className="mt-[clamp(3rem,10vh,6rem)] flex items-center justify-between border-t border-hairline pt-6">
+      <footer className="mt-[clamp(3rem,10vh,6rem)] flex flex-wrap items-center justify-between gap-y-3 border-t border-hairline pt-6">
         <Link
           href="/"
-          className="link-underline text-[0.95rem] text-mono-muted transition-colors hover:text-foreground"
+          className="tap-target inline-flex min-h-11 items-center text-[0.95rem] text-mono-muted transition-colors hover:text-foreground"
         >
-          ← Phil Hie
+          <span className="link-underline">← Phil Hie</span>
         </Link>
         <span className="label-mono">Come back in 2026</span>
       </footer>

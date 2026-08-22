@@ -1,121 +1,103 @@
 # Design System — Phil Hie Personal Website
 
 ## Product Context
-- **What this is:** A personal website that creates a genuine "magic moment" for anyone who visits. A 4-phase choreographed WebGL experience called "The Encounter."
-- **Who it's for:** Everyone. Founders, investors, designers, friends, strangers. Optimized for emotional impact, not credibility signaling.
-- **Space/industry:** Personal/founder websites. Positioned against the category norm of developer portfolios and LinkedIn-style landing pages.
-- **Project type:** Marketing site (single-page landing, brand-forward, experience-first)
+- **What this is:** A personal monograph. One name, one statement, one record. It reads like the cover and contents page of a magazine, not like a portfolio.
+- **Who it's for:** Founders, investors, designers, strangers. It signals taste and restraint before it signals credentials.
+- **Project type:** Marketing site. Server-rendered, typographic, near-zero JavaScript.
 
 ## Aesthetic Direction
-- **Direction:** Luxury Minimal
-- **Decoration level:** Minimal. Particles are the experience, not decoration.
-- **Mood:** Gravity. Mystery. Restraint. Like walking into a dark room where something important is about to happen. The absence of information creates presence. What you don't show matters more than what you do.
-- **Anti-patterns:** No developer portfolio vibes. No card grids. No feature lists. No timeline. No resume. This is art, not a brochure.
+- **Direction:** Quiet luxury. Editorial monochrome.
+- **Decoration level:** None. Type, space, and one hairline rule do all the work.
+- **Mood:** Precision. Restraint. What you leave out matters more than what you add.
+- **Anti-patterns:** No cards. No gradients. No shadows. No icon rows. No hero image. No colour accents.
 
 ## Typography
-- **Display/Name:** Geist Sans — weight 800, `clamp(4.5rem, 10vw, 10rem)`, tracking -0.04em, line-height 0.9. Monumental. The name dominates the viewport.
-- **Tagline:** Geist Sans — weight 400, `clamp(0.875rem, 1.2vw, 1rem)`, color neutral-400. Whispered, not shouted.
-- **Links:** Geist Mono — weight 400, 0.75rem (12px), tracking 0.05em, uppercase. Discoverable, not prominent.
-- **UI (sound toggle):** Geist Mono — weight 400, 0.625rem (10px). "listen" in neutral-600.
-- **Loading:** Both fonts loaded via `next/font/google` (already in layout.tsx). Zero external requests.
-- **Scale:** Name (72-160px) > Tagline (14-16px) > Links (12px) > Toggle (10px). Four levels only.
+One typeface carries the site. Weight and scale make the hierarchy, not colour.
+
+- **Display and body:** Satoshi, self-hosted variable (`app/_fonts/Satoshi-Variable.woff2`, weights 300–900, `display: swap`). Token `--font-display` / `--font-sans`.
+- **Metadata and code:** Geist Mono. Token `--font-mono`. Used only inside long-form writing and on the sound control.
+- **Long-form prose:** Fraunces, on `/thoughts` only. Loaded in `app/thoughts/layout.tsx`.
+
+Four scale steps, all fluid:
+
+| Step | Token or value | Range |
+|---|---|---|
+| Monument (the name) | `--text-monument` | 56px → 192px |
+| Role (ledger rows) | `clamp(1.375rem, 2.88vw + 0.8rem, 2.85rem)` | 22px → 45.6px |
+| Body | `0.95rem` – `1.05rem` | 15px → 17px |
+| Label (`.label-mono`) | `--text-label` | 12px phone, 11px from `md` |
+
+Fluid type uses a **slope and intercept** curve, not a bare `vw`. Write `clamp(min, Avw + Brem, max)`.
+A bare `vw` sits on its own floor across every phone width, so the type stops adapting. Both display
+curves are fitted through their original desktop value, so desktop rendering does not move.
+
+- `.optical-left` cancels Satoshi's cap side-bearing (`-0.085em`) so display type sits ink-flush with the gutter. Apply it to any monument-scale heading.
+- `.label-mono` is the micro-label: uppercase, 500 weight, wide tracking, muted. It is a sans face despite the name.
+- `.nums` turns on tabular figures. Use it on any label that contains a number.
 
 ## Color
-- **Approach:** Restrained (monochrome + adaptive temperature)
-- **Background:** `#000000` (pure black)
-- **Text primary:** `#ffffff` (pure white, name only)
-- **Text muted:** `#a3a3a3` (neutral-400, tagline)
-- **Text dim:** `#737373` (neutral-500, links default)
-- **Text hover:** `#ffffff` (links on hover)
-- **Text subtle:** `#525252` (neutral-600, sound toggle)
-- **Particle base:** `#ffffff` (shifted by time-of-day)
-- **Time-of-day warm:** `#fef3c7` (amber-100, dawn/dusk shift)
-- **Time-of-day cool:** `#dbeafe` (blue-100, night shift)
-- **Time-of-day neutral:** `#ffffff` (midday, no shift)
-- **Bloom glow:** `#ffffff` at 0.3 threshold, 1.5 intensity (desktop), 0.8 (mobile)
-- **Loading glow:** `rgba(255, 255, 255, 0.02)` radial gradient, 3s breathing
-- **Dark mode:** Always dark. No light mode. The black void is the design.
-- **Contrast:** White on black = 21:1 ratio (exceeds WCAG AAA)
+Monochrome. `--signal` is an alias of ink and is no longer a red accent.
 
-## Spacing
-- **Base unit:** 8px
-- **Density:** Comfortable
-- **Scale:** 2xs(2px) xs(4px) sm(8px) md(16px) lg(24px) xl(32px) 2xl(48px) 3xl(64px)
-- **Overlay position:** Bottom-left corner (gallery-label style)
-  - `--overlay-bottom: clamp(2rem, 5vh, 4rem)`
-  - `--overlay-left: clamp(1.5rem, 4vw, 3rem)`
-  - `--name-to-tagline: 0.75rem`
-  - `--tagline-to-links: 1.5rem`
-  - `--link-gap: 1.5rem`
-- **Sound toggle:** Bottom-right, `--toggle-bottom: clamp(1.5rem, 3vh, 2.5rem)`, `--toggle-right: clamp(1.5rem, 4vw, 3rem)`
+| Token | Light | Dark |
+|---|---|---|
+| `--paper` (background) | `#ffffff` | `#000000` |
+| `--ink` (foreground) | `#1d1d1f` | `#f5f5f7` |
+| `--mono-muted` | `#6e6e73` | `#86868b` |
+| `--hairline` | `#e6e6e4` | `#2a2a2c` |
 
-## Layout
-- **Approach:** Full-bleed immersive (no grid, no columns)
-- **Structure:** Full-screen WebGL canvas + fixed-position DOM overlay
-- **Max content width:** None. Canvas fills viewport edge to edge.
-- **Overlay width:** `max-width: 32rem` (512px) for text wrapping on ultra-wide screens
-- **Border radius:** None. Zero borders in the entire design. The void has no edges.
-- **Responsive:**
-  - Desktop (>768px): Bottom-left overlay, generous margins, custom cursor active
-  - Mobile (<768px): Bottom-left overlay, tighter margins, no custom cursor, links wrap with `gap: 0.75rem` (12px), 44px touch targets maintained
+- Light is canonical. Dark is "after hours", reached only by the toggle.
+- Theme is class-based (`next-themes`, `attribute="class"`, `enableSystem: false`). It does **not** follow the OS.
+- Because the OS scheme is ignored, `<meta name="theme-color">` must not branch on `prefers-color-scheme`. `ThemeColorSync` in `components/theme-provider.tsx` writes it from the resolved theme.
+
+## Spacing and Layout
+- **Max content width:** `max-w-[88rem]` (1408px), centred.
+- **Gutter:** `--gutter-x: clamp(1.5rem, 5vw, 5rem)`. Every page uses this token. Do not write a new gutter value.
+- **Screen edges:** `--edge-top`, `--edge-bottom`, `--edge-x`. These fold in `env(safe-area-inset-*)`. Any element anchored to a screen edge must read from them.
+- **Hero:** bottom-anchored (`mt-auto`) inside `min-h-[74svh]`, or `92svh` from `md`. Use `svh`, never `vh` — `vh` is wrong under the iOS URL bar.
+- **Border radius:** none, except the shadcn switch.
+
+## Responsive and Mobile
+The system is fluid first. **Refine the `clamp()` curve; do not add a breakpoint.** Two breakpoints
+exist and no more:
+
+- `md` (48rem / 768px) — the ledger's column layout, the pointer-only hover reveal, and the fixed sound control.
+- `@media (width < 48rem)` in `globals.css` — token overrides only (`--text-label`, label tracking). No layout rules live there.
+
+Rules that hold at every width:
+
+1. **Touch targets are at least 44×44.** Reach that with `min-h-11` plus padding, or with the `.tap-target` utility when padding would move the layout. Never by enlarging the font.
+2. **No micro-label goes below 12px** on a phone. `--text-label` handles this.
+3. **`env(safe-area-inset-*)` needs `viewportFit: "cover"`** in `app/layout.tsx`. Without it every inset resolves to `0px` and the tokens silently do nothing.
+4. **Every hand-written `:hover` must be wrapped in `@media (hover: hover) and (pointer: fine)`.** Tailwind's `hover:` variant is already gated; plain CSS in `globals.css` and `reading.css` is not, and an ungated rule sticks after a tap.
+5. **Nothing is `position: fixed` at the bottom of a phone screen.** `env(safe-area-inset-bottom)` clears the home indicator but cannot clear Safari's bottom toolbar. Dock the control in the footer below `md` instead, as `Colophon` does with the sound toggle.
+6. **A reveal animates `grid-template-rows: 0fr → 1fr`, never a fixed `max-height`.** A magic pixel height clips as soon as the text wraps one line further.
+7. **Reference widths:** 320, 375, 393, 430 portrait, and 734×343 landscape. `playwright.config.ts` runs every spec at all of them.
 
 ## Motion
-- **Approach:** Expressive (the entrance IS the product)
-- **Easing curves:**
-  - Phase 0 to 1 (void to bloom): `ease-in-cubic` — slow start, accelerating. Gravitational pull.
-  - Phase 1 to 2 (bloom peak): `ease-out-quad` — gentle deceleration. The held breath.
-  - Phase 2 to 3 (reveal): `ease-out-expo` — fast dispersal, decelerating into stillness. Exhaling.
-  - Particle drift (Phase 3): Simplex noise, no easing. Organic, continuous.
-  - Cursor displacement: `ease-out` with 0.15s lag. Like dragging through water.
-  - Text fade-in: `ease-out`, 0.5s delay after name reveal.
-- **Duration:**
-  - Phase 1 (void): 0 to 0.8s
-  - Phase 2 (bloom): 0.8 to 2.5s
-  - Phase 3 (reveal): 2.5 to 4.0s
-  - Phase 4 (aftermath): 4.0s onward
-  - Returning visitor: 1.5s total (compressed entrance)
-- **Idle behavior:** Particles freeze after 10s of no interaction. Resume instantly on input.
-- **prefers-reduced-motion:** Skip all animation. Show static aftermath with name + links visible immediately.
-
-## Particles
-- **Rendering:** THREE.Points with gl_PointSize (single draw call)
-- **Count:** 2000 (desktop), 800 (mobile), auto-degrade to 400 if needed
-- **Size range:** 1-4px (desktop), 1-3px (mobile)
-- **Opacity range:** 0.05 to 0.4
-- **Blending:** Additive (THREE.AdditiveBlending)
-- **Shape:** Soft circle SDF (Gaussian alpha falloff)
-- **Post-processing:** Bloom + Vignette + Film Noise (desktop). Bloom only (mobile).
-
-## Sound (Opt-in)
-- **Toggle:** "listen" in 10px Geist Mono, bottom-right. Disappears when sound is enabled.
-- **Engine:** Web Audio API only. No audio files. All synthesized.
-- **Aesthetic:** Deep, resonant, organic. Not electronic or musical. Felt more than heard.
-- **Idle:** Fades to near-silence after 10s. Movement restores it.
+- **Entrance:** `.press-in` — a CSS "focus pull". The name resolves from an 18px blur; the statement and follow row settle after it. Delay is set per element through `--press-delay`. Server HTML, so the LCP element is never hidden behind JavaScript.
+- **Scroll:** `.rule-draw` and `.reveal-up`, both driven by `animation-timeline: view()` behind an `@supports` guard.
+- **Links:** `.link-underline` draws a 1px rule in over 260ms on `cubic-bezier(0.22, 1, 0.36, 1)`.
+- **Route change:** native View Transitions morph the masthead across `/` ↔ `/thoughts` ↔ `/stealth`.
+- **`prefers-reduced-motion`:** every animation above is inside a `no-preference` query. Reduced motion shows the final state immediately.
 
 ## Accessibility
-- **Screen readers:** All text content in DOM overlay (real HTML)
-- **Keyboard:** Standard tab navigation through links. focus-visible ring on links.
-- **Focus-visible ring:** `outline: 1px solid rgba(255, 255, 255, 0.5)`, `outline-offset: 2px`. Applies to links and sound toggle. Monochrome aesthetic, subtle but visible.
-- **Touch targets:** 44px minimum via padding on links
-- **Reduced motion:** Full bypass of all animation. Live-updates if OS setting changes.
-- **WebGL fallback:** Static page with black background, name, tagline, links
-- **Canvas role:** `role="presentation"` + `aria-hidden="true"` (decorative)
-
-## Custom Cursor (Desktop Only)
-- **Condition:** Only when `(pointer: fine)` matches
-- **Appearance:** Small soft light circle, matches particle aesthetic
-- **Link hover:** Custom cursor hidden, real cursor appears as pointer
-- **Implementation:** CSS `cursor: none` + pointer-following div, `pointer-events: none`
+- All content is real server-rendered HTML. Ledger receipts stay in the DOM when collapsed.
+- Focus ring: `2px` ink at 55% with a `3px` offset, on `:focus-visible` only.
+- Touch targets: 44×44 minimum. Enforced by `e2e/mobile.spec.ts`.
+- Contrast: ink on paper is 15.9:1. Muted on paper is 4.8:1.
+- The ledger rows are `<button aria-expanded>`. The `+` / `−` mark is `aria-hidden`; the state is on the button.
 
 ## Decisions Log
 | Date | Decision | Rationale |
 |------|----------|-----------|
-| 2026-03-27 | Initial design system | Created by /design-consultation from /office-hours + CEO + eng + design review decisions |
-| 2026-03-27 | Monochrome + time-of-day | Pure B&W with adaptive temperature. Monochrome = serious. Temperature = alive. |
-| 2026-03-27 | Geist Sans monumental | No new font needed. Scale + weight + tracking make Geist feel monumental. Zero extra bytes. |
-| 2026-03-27 | "Just doing things." | Maximum mystery. Makes people Google you. |
-| 2026-03-27 | Bottom-left overlay | Gallery-label positioning. The experience is art. The name is the label. |
-| 2026-03-27 | "listen" toggle | Invitation, not button. Disappears when enabled. |
-| 2026-03-27 | Points-based particles | Single draw call. Same visual as instanced meshes for soft circles. |
-| 2026-03-27 | Inline shaders | No .vert/.frag files. Template literals in ParticleField.tsx. No webpack config needed. |
-| 2026-03-27 | Freeze-on-idle | Not on-demand rendering. Particles freeze after 10s, resume on input. |
+| 2026-07-05 | Quiet-luxury relaunch on shadcn/ui | The WebGL experience was a demo, not a monograph. Type and restraint age better. |
+| 2026-07-05 | Satoshi as the single typeface | One voice. Weight and scale carry the hierarchy; a second face would dilute it. |
+| 2026-07-05 | Monochrome, `--signal` aliased to ink | The red accent was the only thing on the page that dated it. |
+| 2026-08-21 | Fluid curves use slope + intercept | A bare `vw` bottoms out on its floor across every phone, so the type froze. See `docs/decisions/0001-mobile-responsive-foundations.md`. |
+| 2026-08-21 | `--gutter-x` / `--edge-*` token layer | Four hand-copied position strings had already drifted 9px out of alignment with the content gutter. |
+| 2026-08-21 | Sound control docks in the colophon below `md` | No CSS can lift a bottom-fixed element clear of Safari's bottom toolbar. |
+
+### Superseded
+The 2026-03-27 system ("The Encounter": a four-phase WebGL particle field, Geist Sans 800, pure black
+only, a `(pointer: fine)` custom cursor, and a Web Audio synthesiser) was removed in v2.0.0.0. It is
+recorded here so that older commits stay legible. None of it exists in the codebase.

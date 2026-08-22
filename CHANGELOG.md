@@ -2,6 +2,66 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.0.0] - 2026-08-21
+
+Mobile. The relaunch was tuned on a desktop viewport and never adapted for a phone: the repository
+contained no width-based media query, every fluid size sat frozen on its own floor, half the first
+screen was empty, the ledger's title column was 189px wide, and the smallest touch target measured
+9x23 pixels. This release fixes the token layer rather than the components, so the site stays fluid
+instead of becoming a set of breakpoints.
+
+### Added
+- An edge token layer: `--gutter-x`, `--edge-top`, `--edge-bottom`, `--edge-x`. The `--edge-*` tokens
+  fold in `env(safe-area-inset-*)`, so nothing sits under the notch or the home indicator. Four
+  hand-copied position strings that had drifted 9px out of alignment with the content gutter now
+  read from one value.
+- `viewportFit: "cover"`, without which every safe-area inset resolves to `0px`.
+- A `.tap-target` utility: an invisible 44px hit box for a control that is visually small. Every
+  interactive element on every page now meets 44x44.
+- A disclosure mark on each ledger row. The receipt reveal is pointer-only, so a touch device
+  previously had no signal that a row opens.
+- `docs/decisions/0001-mobile-responsive-foundations.md`, and a "Responsive and Mobile" section in
+  DESIGN.md.
+- `e2e/mobile.spec.ts` and seven device projects in `playwright.config.ts` (320, 375, 393, 412, 430,
+  landscape, desktop). It fails on horizontal overflow, a sub-12px label, a sub-44px target, a
+  clipped receipt, a title past two lines, or an overlay covering the dateline.
+- `typecheck`, `test`, `test:watch` and `test:e2e` npm scripts. Vitest and Playwright were installed
+  but not runnable.
+
+### Changed
+- Fluid type now uses a slope and intercept curve instead of a bare `vw`. `--text-monument` and the
+  ledger role size are both fitted through their original desktop values, so desktop rendering is
+  unchanged; on a phone the name goes from a frozen 52px to 59-72px, and the role size adapts at all
+  for the first time.
+- Micro-labels go to 12px at 0.14em tracking below `md`. They were a fixed 11px at 0.18em, and two
+  were 10px.
+- The ledger drops the year out of its column and onto a meta line below `md`, returning that width
+  to the title: 189px to 287px at 375px. No title wraps past two lines at any reference width.
+- The receipt reveal animates `grid-template-rows: 0fr → 1fr` instead of `max-h-10`, which was
+  clipping the longest receipt by a pixel and would have clipped further on any narrower screen.
+- The hero is `74svh` below `md` and `92svh` from `md`, and its top padding clears the theme toggle
+  so the dateline gets the full measure and sets on one line.
+- The dateline drops its leading "Phil Hie" below `md` — the `<h1>` saying exactly that sits
+  directly beneath it.
+- The sound control docks into the colophon below `md`. Fixed, it covered the ledger's year column
+  and the copyright line, and no CSS can lift a bottom-fixed element clear of Safari's bottom
+  toolbar.
+- The `/thoughts` measure was double-inset by `90vw` plus its own padding. It now shares
+  `--gutter-x` like every other page.
+- `ThemeToggle` positions itself instead of taking a position from each of its four call sites.
+
+### Fixed
+- `<meta name="theme-color">` branched on `prefers-color-scheme` while the app forces a class-based
+  light theme, so a visitor with a dark OS got a dark browser bar above a white page.
+  `ThemeColorSync` now writes it from the resolved theme.
+- Four hand-written `:hover` rules were not gated by `@media (hover: hover)`, so the underline and
+  the colour change stuck after a tap. Tailwind gates its own `hover:` variant; plain CSS is not.
+- Long code, wide tables and oversized images in `/thoughts` prose could exceed the measure.
+- `overflow-x: clip` on `html, body` as a safety net.
+
+### Removed
+- `app/_home/Dispatches.tsx`. Imported nowhere, and carrying the same defects.
+
 ## [2.0.0.0] - 2026-07-05
 
 The relaunch. A complete redesign and design-system takeover: the WebGL "weather" hero is gone, replaced by a quiet-luxury founder site built on shadcn/ui. Monochrome, precise, typographic. The record (Goldman Sachs, Grex, Adepto, Avelios, and a stealth company) reads as a clean editorial page.

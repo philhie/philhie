@@ -157,7 +157,11 @@ export function SoundToggle({ className }: { className?: string }) {
         aria-pressed={on}
         disabled={!ready || errored}
         className={cn(
-          "inline-flex items-center gap-2 font-mono text-[0.625rem] uppercase tracking-[0.2em] transition-colors disabled:cursor-default disabled:opacity-40",
+          // -mx-3/-my-2.5 pulls the padding back out of the layout, so the
+          // control still sits flush to the `--edge-*` corner while offering a
+          // real 44px target instead of the old 62x15px one.
+          "-mx-3 -my-2.5 inline-flex min-h-11 items-center gap-2 px-3 py-2.5",
+          "font-mono text-(length:--text-label) uppercase tracking-[0.2em] transition-colors disabled:cursor-default disabled:opacity-40",
           on ? "text-signal" : "text-mono-muted hover:text-foreground",
           className,
         )}

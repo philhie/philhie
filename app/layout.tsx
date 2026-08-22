@@ -24,10 +24,14 @@ const geistMono = Geist_Mono({
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
-  ],
+  // Required. Without it every `env(safe-area-inset-*)` in globals.css resolves
+  // to 0px, and the floating controls sit under the notch / home indicator.
+  viewportFit: "cover",
+  // The theme is class-based and user-toggled (`enableSystem: false`), so it
+  // must NOT key off prefers-color-scheme: a visitor with a dark OS was getting
+  // a #0a0a0a browser chrome bar above a white page. Light is canonical, and
+  // ThemeColorSync repaints this tag when the visitor flips to after-hours.
+  themeColor: "#ffffff",
 };
 
 const DESCRIPTION = "Phil Hie. Building.";

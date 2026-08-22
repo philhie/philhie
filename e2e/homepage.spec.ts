@@ -39,7 +39,12 @@ test.describe("Monograph homepage", () => {
 
   test("sound toggle is present", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByText("sound on")).toBeVisible({ timeout: 6000 });
+    // Docked in the colophon below `md`, so it starts below the fold there.
+    const sound = page.getByRole("button", {
+      name: /sound on|listen|audio off/i,
+    });
+    await sound.scrollIntoViewIfNeeded();
+    await expect(sound).toBeVisible({ timeout: 6000 });
   });
 
   test("has the monograph title", async ({ page }) => {

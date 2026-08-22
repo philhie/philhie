@@ -45,7 +45,7 @@ export function PressReveal({
         >
           <Link
             href="/stealth"
-            className="optical-left link-underline inline-block font-display text-[clamp(1.5rem,3.4vw,2.5rem)] font-light tracking-[-0.02em] text-foreground/90 transition-opacity hover:opacity-70"
+            className="tap-target optical-left link-underline inline-block font-display text-[clamp(1.5rem,3.4vw,2.5rem)] font-light tracking-[-0.02em] text-foreground/90 transition-opacity hover:opacity-70"
           >
             Building
           </Link>

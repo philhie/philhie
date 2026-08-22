@@ -8,18 +8,22 @@
   color: var(--foreground);
 }
 
+/* `90vw` left a 19px gutter on a phone while every other page used 24px.
+   `100% - 2 * --gutter-x` keeps the measure and shares the site gutter. */
 .thoughts-wrap {
-  width: min(42rem, 90vw); /* ~68ch measure */
+  width: min(42rem, 100% - 2 * var(--gutter-x)); /* ~68ch measure */
   margin: 0 auto;
-  padding: clamp(4.5rem, 14vh, 9rem) clamp(1.5rem, 5vw, 2rem)
-    clamp(6rem, 18vh, 11rem);
+  padding: calc(clamp(4.5rem, 14vh, 9rem) + var(--edge-top)) 0
+    calc(clamp(4rem, 12vh, 11rem) + var(--edge-bottom));
 }
 
 /* ---- back / section nav ---- */
 .thoughts-back {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   font-family: var(--font-geist-mono), monospace;
-  font-size: 0.6875rem;
+  font-size: var(--text-label);
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--mono-muted);
@@ -28,8 +32,12 @@
   margin-bottom: clamp(2.5rem, 6vh, 4rem);
   view-transition-name: masthead-title;
 }
-.thoughts-back:hover {
-  color: var(--signal);
+/* Hand-written, so Tailwind's automatic `(hover: hover)` wrapper does not
+   apply — without the gate the colour sticks after a tap on a phone. */
+@media (hover: hover) and (pointer: fine) {
+  .thoughts-back:hover {
+    color: var(--foreground);
+  }
 }
 
 /* ---- index ---- */
@@ -63,6 +71,7 @@
 }
 .thoughts-link {
   display: block;
+  min-height: 44px;
   padding: clamp(1.5rem, 4vh, 2.25rem) 0;
   text-decoration: none;
   color: inherit;
@@ -76,8 +85,10 @@
   margin: 0;
   transition: color 0.25s ease;
 }
-.thoughts-link:hover h2 {
-  color: var(--signal);
+@media (hover: hover) and (pointer: fine) {
+  .thoughts-link:hover h2 {
+    color: var(--mono-muted);
+  }
 }
 .thoughts-link p {
   font-family: var(--font-fraunces), Georgia, serif;
@@ -88,7 +99,7 @@
 }
 .thoughts-meta {
   font-family: var(--font-geist-mono), monospace;
-  font-size: 0.625rem;
+  font-size: var(--text-label);
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--mono-muted);
@@ -107,7 +118,7 @@
 }
 .article-meta {
   font-family: var(--font-geist-mono), monospace;
-  font-size: 0.6875rem;
+  font-size: var(--text-label);
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--mono-muted);
@@ -133,8 +144,25 @@
   border-bottom: 1px solid color-mix(in oklab, var(--signal) 40%, transparent);
   transition: border-color 0.25s ease;
 }
-.prose-thoughts a:hover {
-  border-color: var(--signal);
+@media (hover: hover) and (pointer: fine) {
+  .prose-thoughts a:hover {
+    border-color: var(--signal);
+  }
+}
+
+/* Nothing in the prose may exceed the measure at 320px. */
+.prose-thoughts code,
+.prose-thoughts pre {
+  overflow-wrap: anywhere;
+}
+.prose-thoughts img {
+  max-width: 100%;
+  height: auto;
+}
+.prose-thoughts table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
 }
 .prose-thoughts h2,
 .prose-thoughts h3 {
