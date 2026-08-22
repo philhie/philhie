@@ -7,9 +7,10 @@ import { localTimeString } from "../_lib/clock";
  * sealed page), and the follow row — all above the fold. Server HTML; the
  * entrance is pure CSS.
  *
- * Below `md` the stack flows from the top (see PressReveal) and the hero is
- * sized to its content, so the record starts on the first screen rather than
- * behind 400px of white.
+ * Below `md` the hero IS the opening screen: `min-h-svh`, with the masthead row
+ * at the top and the follow row anchored to the bottom edge (see PressReveal).
+ * The record therefore starts below the fold and the fold is the section break,
+ * so no explicit break is needed on the ledger.
  *
  * The top padding clears the notch (`--edge-top`). It no longer has to clear
  * the after-hours control too — that sits in the masthead row now, not above it.
@@ -18,7 +19,7 @@ export function Masthead() {
   const initialTime = localTimeString(HOME_TZ);
 
   return (
-    <header className="flex flex-col pt-[max(clamp(2rem,6vh,3.5rem),var(--edge-top))] pb-8 md:min-h-[92svh] md:pb-[clamp(2rem,7vh,5rem)] md:pt-[clamp(2rem,6vh,3.5rem)]">
+    <header className="flex min-h-svh flex-col pt-[max(clamp(2rem,6vh,3.5rem),var(--edge-top))] pb-8 md:min-h-[92svh] md:pb-[clamp(2rem,7vh,5rem)] md:pt-[clamp(2rem,6vh,3.5rem)]">
       <PressReveal
         place={HOME_CITY}
         timezone={HOME_TZ}

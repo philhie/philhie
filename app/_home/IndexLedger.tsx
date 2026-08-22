@@ -7,10 +7,8 @@ import { INDEX } from "./index-data";
 /**
  * ② The Index — the record as a magazine contents page.
  *
- * The `pt-32` below `md` is a section break, not padding. Without it the record
- * ran 62px under the follow row and the two read as one continuous list — the
- * record appeared to climb into the hero. 128px reads as "new section", and
- * leaves the heading peeking at the fold as the scroll cue. Quiet numbered rows;
+ * No explicit section break below `md`: the hero fills the screen, so the fold
+ * itself separates the record from it. Quiet numbered rows;
  * the receipt reveals on hover / focus (pointer) or tap (touch). Receipts are
  * always in the DOM (a11y + agent-readable); the reveal is presentational.
  *
@@ -38,7 +36,7 @@ export function IndexLedger() {
   return (
     <section
       aria-labelledby="index-heading"
-      className="pt-32 pb-10 md:pt-[clamp(3rem,10vh,7rem)] md:pb-[clamp(2rem,6vh,7rem)]"
+      className="pt-10 pb-10 md:pt-[clamp(3rem,10vh,7rem)] md:pb-[clamp(2rem,6vh,7rem)]"
     >
       <h2 id="index-heading" className="label-mono mb-8">
         Background
