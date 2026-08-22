@@ -7,10 +7,9 @@ import { localTimeString } from "../_lib/clock";
  * sealed page), and the follow row — all above the fold. Server HTML; the
  * entrance is pure CSS.
  *
- * The name is bottom-anchored (`mt-auto`) — that is the house style, and
- * `/stealth` matches it. But 92svh of it on a phone left the top half of the
- * first screen blank, so phones get 74svh: the void stays deliberate, and the
- * "Background" heading peeks over the fold as the scroll cue.
+ * Below `md` the stack flows from the top (see PressReveal) and the hero is
+ * sized to its content, so the record starts on the first screen rather than
+ * behind 400px of white.
  *
  * The top padding has a floor of `--edge-top + 2.75rem`, which is the height of
  * the fixed theme toggle. The dateline therefore starts below the toggle rather
@@ -20,7 +19,7 @@ export function Masthead() {
   const initialTime = localTimeString(HOME_TZ);
 
   return (
-    <header className="flex min-h-[74svh] flex-col pt-[max(clamp(2rem,6vh,3.5rem),calc(var(--edge-top)+2.75rem))] pb-[clamp(2rem,7vh,5rem)] md:min-h-[92svh] md:pt-[clamp(2rem,6vh,3.5rem)]">
+    <header className="flex flex-col pt-[max(clamp(2rem,6vh,3.5rem),calc(var(--edge-top)+2.75rem))] pb-8 md:min-h-[92svh] md:pb-[clamp(2rem,7vh,5rem)] md:pt-[clamp(2rem,6vh,3.5rem)]">
       <PressReveal
         place={HOME_CITY}
         timezone={HOME_TZ}

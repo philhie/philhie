@@ -201,6 +201,53 @@ test.describe("home", () => {
     }
   });
 
+  /**
+   * Composition, not just defects.
+   *
+   * The first mobile pass fixed every measurable defect — nothing overflowed,
+   * nothing was clipped, every target was 44px — and the page still looked
+   * wrong, because the name was small against a wide measure and the stack was
+   * bottom-anchored behind a large void. These two assertions are what
+   * "looks right" reduces to, and they are the ones a screenshot review caught
+   * that the defect tests did not.
+   */
+  test("the name fills the measure on a phone", async ({ page }) => {
+    test.skip(!(await isMobileWidth(page)), "a phone-composition rule");
+    const fill = await page.evaluate(() => {
+      const range = document.createRange();
+      range.selectNodeContents(document.querySelector("h1")!);
+      const text = Math.max(
+        ...[...range.getClientRects()].map((r) => r.width),
+      );
+      const main = document.querySelector("main")!;
+      const measure =
+        main.getBoundingClientRect().width -
+        parseFloat(getComputedStyle(main).paddingLeft) * 2;
+      return Math.round((text / measure) * 100);
+    });
+    expect(fill, `the name fills only ${fill}% of the measure`).toBeGreaterThan(
+      68,
+    );
+  });
+
+  test("the hero has no dead vertical gap on a phone", async ({ page }) => {
+    test.skip(!(await isMobileWidth(page)), "a phone-composition rule");
+    const gaps = await page.evaluate(() => {
+      const box = (s: string) => document.querySelector(s)!.getBoundingClientRect();
+      return {
+        "rule to name": Math.round(
+          box("h1").top - box('header [data-slot="separator"]').bottom,
+        ),
+        "follow row to Background": Math.round(
+          box("#index-heading").top - box("nav").bottom,
+        ),
+      };
+    });
+    for (const [where, gap] of Object.entries(gaps)) {
+      expect(gap, `${gap}px of empty white, ${where}`).toBeLessThanOrEqual(80);
+    }
+  });
+
   test("the theme toggle never covers the dateline", async ({ page }) => {
     const clash = await page.evaluate(() => {
       const a = document.querySelector("label.fixed")!.getBoundingClientRect();
