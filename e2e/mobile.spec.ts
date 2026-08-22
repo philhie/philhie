@@ -232,25 +232,64 @@ test.describe("home", () => {
 
   test("the hero has no dead vertical gap on a phone", async ({ page }) => {
     test.skip(!(await isMobileWidth(page)), "a phone-composition rule");
-    const gaps = await page.evaluate(() => {
+    const gap = await page.evaluate(() => {
       const box = (s: string) => document.querySelector(s)!.getBoundingClientRect();
-      return {
-        "rule to name": Math.round(
-          box("h1").top - box('header [data-slot="separator"]').bottom,
-        ),
-        "follow row to Background": Math.round(
-          box("#index-heading").top - box("nav").bottom,
-        ),
-      };
+      return Math.round(
+        box("h1").top - box('header [data-slot="separator"]').bottom,
+      );
     });
-    for (const [where, gap] of Object.entries(gaps)) {
-      expect(gap, `${gap}px of empty white, ${where}`).toBeLessThanOrEqual(80);
-    }
+    expect(
+      gap,
+      `${gap}px of empty white between the rule and the name`,
+    ).toBeLessThanOrEqual(80);
   });
 
+  /**
+   * The gap between the follow row and "Background" is a SECTION BREAK, not a
+   * hero gap, and the two want opposite things. An earlier version of this file
+   * held both to one ceiling, so the break was squeezed to 62px and the record
+   * read as a continuation of the hero rather than a new section. A break needs
+   * a floor as well as a ceiling: wide enough to separate, tight enough to
+   * leave the heading near the fold as the scroll cue.
+   */
+  test("the record reads as its own section, not a continuation of the hero", async ({
+    page,
+  }) => {
+    test.skip(!(await isMobileWidth(page)), "a phone-composition rule");
+    const { brk, headingTop, viewport } = await page.evaluate(() => {
+      const box = (s: string) => document.querySelector(s)!.getBoundingClientRect();
+      return {
+        brk: Math.round(box("#index-heading").top - box("nav").bottom),
+        headingTop: Math.round(box("#index-heading").top),
+        viewport: window.innerHeight,
+      };
+    });
+    expect(
+      brk,
+      `only ${brk}px between the follow row and the record`,
+    ).toBeGreaterThanOrEqual(96);
+    expect(brk, `${brk}px is a void, not a section break`).toBeLessThanOrEqual(
+      200,
+    );
+    expect(
+      headingTop,
+      `"Background" sits ${headingTop}px down a ${viewport}px screen — too high, it reads as hero`,
+    ).toBeGreaterThan(viewport * 0.6);
+  });
+
+  /**
+   * Below `md` the control is docked in the masthead row, so it shares the
+   * dateline's baseline by construction and cannot overlap. From `md` up it
+   * floats over the page, which is where a collision is possible — that is the
+   * case this guards.
+   */
   test("the theme toggle never covers the dateline", async ({ page }) => {
     const clash = await page.evaluate(() => {
-      const a = document.querySelector("label.fixed")!.getBoundingClientRect();
+      const toggle = document.querySelector("label");
+      if (!toggle || getComputedStyle(toggle).position !== "fixed") {
+        return { overlaps: false, gap: Infinity, docked: true };
+      }
+      const a = toggle.getBoundingClientRect();
       // The <p> is a full-width block. What can actually be covered is the
       // text inside it, so measure the rendered line boxes.
       const range = document.createRange();
@@ -273,6 +312,57 @@ test.describe("home", () => {
       };
     });
     expect(clash.overlaps, `only ${clash.gap}px of clearance`).toBe(false);
+  });
+
+  /**
+   * A `position: fixed` element is positioned against the viewport only if no
+   * ancestor has a transform, filter, or containment — any of those become its
+   * containing block instead. The hero's `.press-in` entrance animates a
+   * transform, so wrapping the control in it silently moved it from 64px off
+   * the viewport edge to 64px off that box, i.e. 128px, on desktop. Nothing
+   * overlapped, so the collision test stayed green.
+   */
+  test("the floating control is positioned against the viewport, not an ancestor", async ({
+    page,
+  }) => {
+    test.skip(await isMobileWidth(page), "the control is docked below md");
+    const { offset, gutter } = await page.evaluate(() => {
+      const toggle = document.querySelector("label")!;
+      const main = document.querySelector("main")!;
+      return {
+        offset: Math.round(
+          window.innerWidth - toggle.getBoundingClientRect().right,
+        ),
+        gutter: Math.round(parseFloat(getComputedStyle(main).paddingLeft)),
+      };
+    });
+    expect(
+      offset,
+      `the control is ${offset}px from the edge but the gutter is ${gutter}px — a transformed ancestor is capturing it`,
+    ).toBe(gutter);
+  });
+
+  test("the after-hours control sits on the dateline's baseline on a phone", async ({
+    page,
+  }) => {
+    test.skip(!(await isMobileWidth(page)), "a phone-composition rule");
+    const row = await page.evaluate(() => {
+      const centre = (el: Element) => {
+        const r = el.getBoundingClientRect();
+        return r.top + r.height / 2;
+      };
+      const toggle = document.querySelector("label")!;
+      return {
+        position: getComputedStyle(toggle).position,
+        drift: Math.abs(centre(toggle) - centre(document.querySelector("header p")!)),
+      };
+    });
+    // Docked, not floating in a band of its own above the row.
+    expect(row.position).toBe("static");
+    expect(
+      row.drift,
+      `the control is ${Math.round(row.drift)}px off the dateline's centre`,
+    ).toBeLessThanOrEqual(3);
   });
 
   test("the sound control docks into the footer on a phone", async ({
