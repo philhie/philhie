@@ -12,11 +12,22 @@ import { cn } from "@/lib/utils";
  * its inverted dark reading. Renders a stable placeholder until mounted so
  * next-themes can't cause a hydration mismatch.
  *
- * It positions itself. Every page wants it in the same top-right corner, and
- * four hand-copied class strings had already drifted out of alignment with the
- * content gutter — so the corner lives here, keyed off the `--edge-*` tokens.
+ * It positions itself, off the `--edge-*` tokens — four hand-copied class
+ * strings had already drifted out of alignment with the content gutter.
  */
-export function ThemeToggle({ className }: { className?: string }) {
+export function ThemeToggle({
+  className,
+  variant = "floating",
+}: {
+  className?: string;
+  /**
+   * `floating` pins the control to the top-right corner — correct on a wide
+   * desktop viewport, and on pages with no masthead row to sit in.
+   * `docked` puts it in the flow below `md` so it shares a baseline with the
+   * dateline, and floats again from `md` up.
+   */
+  variant?: "floating" | "docked";
+}) {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
@@ -26,10 +37,12 @@ export function ThemeToggle({ className }: { className?: string }) {
   return (
     <label
       className={cn(
-        "label-mono fixed right-[var(--edge-x)] top-[var(--edge-top)] z-50",
-        // min-h-11/py-3 make a 44px target; -mt-3 cancels the growth so the
-        // glyphs sit exactly where they did before.
-        "-mt-3 inline-flex min-h-11 cursor-pointer touch-manipulation select-none items-center gap-2 py-3",
+        // min-h-11/py-3 make a 44px target; the negative margin cancels the
+        // growth so the glyphs sit where the optical alignment wants them.
+        "label-mono inline-flex min-h-11 cursor-pointer touch-manipulation select-none items-center gap-2 py-3",
+        variant === "floating"
+          ? "fixed right-[var(--edge-x)] top-[var(--edge-top)] z-50 -mt-3"
+          : "-my-3 md:fixed md:right-[var(--edge-x)] md:top-[var(--edge-top)] md:z-50 md:-my-0 md:-mt-3",
         className,
       )}
     >

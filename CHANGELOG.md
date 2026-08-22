@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.2.0] - 2026-08-22
+
+Two reported problems on the phone landing page, both introduced by the previous two releases.
+
+### Fixed
+- The after-hours control floated in a band of its own above the dateline, with an empty corner
+  beside it and the rule under both — three stacked strips where the design wants one masthead row.
+  Measured at 393x659: control at y 8-52, dateline at y 64-82, no shared baseline. Below `md` it now
+  sits in the flow on the dateline's baseline (both centres y=50), under the same rule. From `md` up
+  it floats in the corner as before. It takes a `variant` prop rather than a fourth hand-copied
+  position string, because `/thoughts` has no masthead row to sit in.
+- The record ran 62px under the follow row and read as a continuation of the hero rather than a new
+  section. The break below `md` is now 128px, which separates the two while leaving the heading near
+  the fold as the scroll cue.
+- A `position: fixed` regression the collision test could not see. `.press-in` animates a transform,
+  and a transformed ancestor becomes the containing block for a fixed descendant — so wrapping the
+  masthead row in it moved the control from 64px off the viewport edge to 128px on desktop. Nothing
+  overlapped, so nothing failed. The animation now goes on the dateline and the rule, not the row.
+
+### Changed
+- Because the control is in the flow below `md`, the header no longer pads down to clear it, only to
+  clear the notch. The page starts 22px higher.
+
+### Added
+- Three assertions covering what the existing tests could not see: the control shares the dateline's
+  baseline below `md`; the section break has a floor (96px) as well as a ceiling (200px), and the
+  heading sits below 60% of the viewport; and the floating control's offset from the viewport edge
+  equals the gutter, which is what a transformed ancestor silently breaks.
+
+### Note
+The hero-gap assertion previously held a section break and a hero gap to the same 80px ceiling. They
+want opposite things. That conflation is why the break was squeezed to 62px in the first place.
+
 ## [2.1.1.0] - 2026-08-22
 
 Composition. The first mobile pass fixed every measurable defect and the landing page still looked

@@ -18,11 +18,12 @@ export default function StealthPage() {
   const initialTime = localTimeString(HOME_TZ);
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-[88rem] flex-col px-[var(--gutter-x)] pt-[max(clamp(2rem,6vh,3.5rem),calc(var(--edge-top)+2.75rem))] pb-[calc(clamp(2rem,7vh,5rem)+var(--edge-bottom))] md:pt-[clamp(2rem,6vh,3.5rem)]">
-      <ThemeToggle />
-
+    <main className="mx-auto flex min-h-svh max-w-[88rem] flex-col px-[var(--gutter-x)] pt-[max(clamp(2rem,6vh,3.5rem),var(--edge-top))] pb-[calc(clamp(2rem,7vh,5rem)+var(--edge-bottom))] md:pt-[clamp(2rem,6vh,3.5rem)]">
       <div>
-        <Dateline place={HOME_CITY} timezone={HOME_TZ} initialTime={initialTime} />
+        <div className="flex items-center justify-between gap-4">
+          <Dateline place={HOME_CITY} timezone={HOME_TZ} initialTime={initialTime} />
+          <ThemeToggle variant="docked" />
+        </div>
         <Separator className="mt-4 bg-hairline" />
       </div>
 

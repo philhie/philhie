@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { Separator } from "@/components/ui/separator";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Dateline } from "./Dateline";
 import { Socials } from "./Socials";
 
@@ -26,8 +27,26 @@ export function PressReveal({
 }) {
   return (
     <>
+      {/* The masthead row: dateline left, after-hours control right, one
+          baseline, one rule under both. The control used to float in a band of
+          its own above this line, with an empty corner beside it.
+
+          `.press-in` is deliberately NOT on this row. It animates a transform,
+          and a transformed ancestor becomes the containing block for a
+          `position: fixed` descendant — which from `md` up is exactly what the
+          control is. Wrapping the row moved it from 64px off the viewport edge
+          to 64px off this box, i.e. 128px, on desktop. The animation goes on
+          the dateline and the rule instead; the control does not need it. */}
+      <div className="flex items-center justify-between gap-4">
+        <div
+          className="press-in min-w-0"
+          style={{ "--press-delay": "0.1s" } as CSSProperties}
+        >
+          <Dateline place={place} timezone={timezone} initialTime={initialTime} />
+        </div>
+        <ThemeToggle variant="docked" />
+      </div>
       <div className="press-in" style={{ "--press-delay": "0.1s" } as CSSProperties}>
-        <Dateline place={place} timezone={timezone} initialTime={initialTime} />
         <Separator className="mt-4 bg-hairline" />
       </div>
 
