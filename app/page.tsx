@@ -2,7 +2,6 @@ import { PersonJsonLd } from "./_seo/PersonJsonLd";
 import { Masthead } from "./_home/Masthead";
 import { IndexLedger } from "./_home/IndexLedger";
 import { Colophon } from "./_home/Colophon";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 // The masthead shows San Francisco local time — computed fresh at request time.
 export const dynamic = "force-dynamic";
@@ -11,8 +10,6 @@ export default function Home() {
   return (
     <>
       <PersonJsonLd />
-
-      <ThemeToggle />
 
       <main className="mx-auto max-w-[88rem] px-[var(--gutter-x)]">
         <Masthead />

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { Separator } from "@/components/ui/separator";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Dateline } from "./Dateline";
 import { Socials } from "./Socials";
 
@@ -27,7 +28,13 @@ export function PressReveal({
   return (
     <>
       <div className="press-in" style={{ "--press-delay": "0.1s" } as CSSProperties}>
-        <Dateline place={place} timezone={timezone} initialTime={initialTime} />
+        {/* The masthead row: dateline left, after-hours control right, one
+            baseline, one rule under both. The control used to float in a band
+            of its own above this line, with an empty corner beside it. */}
+        <div className="flex items-center justify-between gap-4">
+          <Dateline place={place} timezone={timezone} initialTime={initialTime} />
+          <ThemeToggle variant="docked" />
+        </div>
         <Separator className="mt-4 bg-hairline" />
       </div>
 
