@@ -9,10 +9,10 @@ import { Socials } from "./Socials";
  * The hero. Server-rendered (the name is real SSR HTML — the LCP element, never
  * hidden behind JS).
  *
- * `mt-auto` bottom-anchors the name — a gallery-label placement that reads well
- * on a wide, short desktop viewport. On a tall phone it dropped the whole stack
- * to the bottom of the box and left ~400px of dead white above it. Below `md`
- * the stack flows from the top with one deliberate gap instead. The entrance is a pure-CSS "focus pull": the name resolves
+ * Below `md` the hero fills the screen, so the stack is bracketed: masthead row
+ * and name at the top, follow row anchored to the bottom edge via `mt-auto`.
+ * Letting the whole stack clump at the top instead leaves the bottom half blank
+ * and reads as though the content simply stopped. The entrance is a pure-CSS "focus pull": the name resolves
  * from a soft blur, then the statement and follow row settle. Reduced-motion
  * shows everything at once (the animation lives behind a media query).
  */
@@ -77,7 +77,7 @@ export function PressReveal({
       </div>
 
       <div
-        className="press-in mt-[clamp(2.5rem,7vh,4.5rem)]"
+        className="press-in mt-auto pt-10 md:mt-[clamp(2.5rem,7vh,4.5rem)] md:pt-0"
         style={{ "--press-delay": "0.7s" } as CSSProperties}
       >
         <Socials />

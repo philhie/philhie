@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.3.0] - 2026-08-22
+
+The phone hero now owns the opening screen.
+
+### Changed
+- Below `md` the hero is `min-h-svh` and the record starts below the fold. A 128px section break
+  separated the two but still left "Background" and the first row on the opening screen; a
+  full-screen hero removes the question entirely. The fold is the section break, so the ledger no
+  longer carries an explicit one.
+- The follow row anchors to the bottom edge of the hero (`mt-auto`). Bracketing the screen — masthead
+  row and name at the top, links at the bottom — reads as a composed cover. Letting the stack clump
+  at the top leaves the bottom half blank and reads as though the content simply stopped.
+
+### Changed (tests)
+- The section-break assertion is replaced by the stronger contract it was approximating: the hero
+  must be at least the viewport height, no part of the record may appear above the fold, and the
+  follow row must sit within 72px of the bottom edge.
+
+Desktop is untouched: the hero stays at 92svh, the name at 172.8px, the floating control at 64px.
+
 ## [2.1.2.0] - 2026-08-22
 
 Two reported problems on the phone landing page, both introduced by the previous two releases.

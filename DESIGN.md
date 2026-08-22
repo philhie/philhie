@@ -72,7 +72,7 @@ Rules that hold at every width:
 5. **Nothing is `position: fixed` at the bottom of a phone screen.** `env(safe-area-inset-bottom)` clears the home indicator but cannot clear Safari's bottom toolbar. Dock the control in the footer below `md` instead, as `Colophon` does with the sound toggle.
 6. **A reveal animates `grid-template-rows: 0fr → 1fr`, never a fixed `max-height`.** A magic pixel height clips as soon as the text wraps one line further.
 7. **Below `md` the vertical rhythm is fixed `rem`, not `vh`.** A `vh` gap grows on a tall phone, which is backwards — a taller screen should hold more content, not more air. `vh` spacing stays on desktop, where the viewport is wide and short.
-8. **Below `md` the hero is sized by its content.** No `min-h`, no `mt-auto`. Bottom-anchoring is a gallery-label placement that reads well on a wide desktop viewport; on a tall phone it drops the whole stack to the bottom of the box and leaves dead white above it.
+8. **Below `md` the hero IS the opening screen** (`min-h-svh`), and the record starts below the fold. The stack is bracketed — masthead row and name at the top, follow row anchored to the bottom edge with `mt-auto`. Do not bottom-anchor the whole stack (it leaves dead white above the name) and do not let it clump at the top (it leaves the bottom half blank).
 9. **The name fills at least 70% of the measure on a phone.** A desktop-fitted curve gives about 60%, which reads as small type stranded in a wide column. `.text-monument` is therefore overridden inside the phone query — see the `@theme inline` note below.
 10. **Reference widths:** 320, 375, 393, 430 portrait, and 734×343 landscape. `playwright.config.ts` runs every spec at all of them.
 
@@ -105,7 +105,8 @@ Rules that hold at every width:
 | 2026-08-21 | Sound control docks in the colophon below `md` | No CSS can lift a bottom-fixed element clear of Safari's bottom toolbar. |
 | 2026-08-22 | Phone hero is content-sized, with a fixed-rem rhythm | Measurements can all pass while the page still looks wrong. Bottom-anchoring plus `vh` gaps left the name small and stranded between two voids. |
 | 2026-08-22 | The after-hours control docks into the masthead row below `md` | Floating, it sat in a band of its own above the dateline with an empty corner beside it. Docked, the row reads as one masthead: dateline left, control right, one rule under both. |
-| 2026-08-22 | A section break is not a hero gap | Holding both to one ceiling squeezed the break to 62px, and the record read as a continuation of the hero. A break needs a floor (96px) as well as a ceiling (200px). |
+| 2026-08-22 | A section break is not a hero gap | Holding both to one ceiling squeezed the break to 62px, and the record read as a continuation of the hero. A break needs a floor as well as a ceiling. |
+| 2026-08-22 | The phone hero fills the screen; the fold is the section break | An explicit 128px break still left the record on the opening screen. A full-screen hero removes the question. The follow row anchors to the bottom edge so the screen reads as a composed cover, not a clump. |
 
 ### Superseded
 The 2026-03-27 system ("The Encounter": a four-phase WebGL particle field, Geist Sans 800, pure black

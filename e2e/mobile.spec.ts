@@ -252,29 +252,37 @@ test.describe("home", () => {
    * a floor as well as a ceiling: wide enough to separate, tight enough to
    * leave the heading near the fold as the scroll cue.
    */
-  test("the record reads as its own section, not a continuation of the hero", async ({
+  test("the hero owns the whole screen and the record starts below the fold", async ({
     page,
   }) => {
     test.skip(!(await isMobileWidth(page)), "a phone-composition rule");
-    const { brk, headingTop, viewport } = await page.evaluate(() => {
-      const box = (s: string) => document.querySelector(s)!.getBoundingClientRect();
-      return {
-        brk: Math.round(box("#index-heading").top - box("nav").bottom),
-        headingTop: Math.round(box("#index-heading").top),
-        viewport: window.innerHeight,
-      };
-    });
+    const { heroHeight, headingTop, followBottom, viewport } =
+      await page.evaluate(() => {
+        const box = (s: string) =>
+          document.querySelector(s)!.getBoundingClientRect();
+        return {
+          heroHeight: Math.round(box("header").height),
+          headingTop: Math.round(box("#index-heading").top),
+          followBottom: Math.round(box("nav").bottom),
+          viewport: window.innerHeight,
+        };
+      });
+    // The hero is the opening screen, not a block that happens to sit on it.
     expect(
-      brk,
-      `only ${brk}px between the follow row and the record`,
-    ).toBeGreaterThanOrEqual(96);
-    expect(brk, `${brk}px is a void, not a section break`).toBeLessThanOrEqual(
-      200,
-    );
+      heroHeight,
+      `the hero is ${heroHeight}px on a ${viewport}px screen`,
+    ).toBeGreaterThanOrEqual(viewport - 1);
+    // Nothing from the record may appear on the opening screen.
     expect(
       headingTop,
-      `"Background" sits ${headingTop}px down a ${viewport}px screen — too high, it reads as hero`,
-    ).toBeGreaterThan(viewport * 0.6);
+      `"Background" is visible at ${headingTop}px on a ${viewport}px screen`,
+    ).toBeGreaterThanOrEqual(viewport);
+    // The follow row anchors to the bottom edge, so the screen reads as a
+    // composed cover rather than a clump of type with dead space beneath it.
+    expect(
+      viewport - followBottom,
+      `the follow row ends ${viewport - followBottom}px above the fold — it should sit on it`,
+    ).toBeLessThanOrEqual(72);
   });
 
   /**
