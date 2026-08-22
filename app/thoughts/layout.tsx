@@ -23,7 +23,7 @@ export default function ThoughtsLayout({
 }) {
   return (
     <div className={`${fraunces.variable} thoughts-root`}>
-      <ThemeToggle className="fixed right-[clamp(1rem,4vw,2.5rem)] top-[clamp(1rem,3vh,1.75rem)] z-50" />
+      <ThemeToggle />
       {children}
     </div>
   );
