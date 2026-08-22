@@ -6,7 +6,12 @@ import { Socials } from "./Socials";
 
 /**
  * The hero. Server-rendered (the name is real SSR HTML — the LCP element, never
- * hidden behind JS). The entrance is a pure-CSS "focus pull": the name resolves
+ * hidden behind JS).
+ *
+ * `mt-auto` bottom-anchors the name — a gallery-label placement that reads well
+ * on a wide, short desktop viewport. On a tall phone it dropped the whole stack
+ * to the bottom of the box and left ~400px of dead white above it. Below `md`
+ * the stack flows from the top with one deliberate gap instead. The entrance is a pure-CSS "focus pull": the name resolves
  * from a soft blur, then the statement and follow row settle. Reduced-motion
  * shows everything at once (the animation lives behind a media query).
  */
@@ -26,7 +31,7 @@ export function PressReveal({
         <Separator className="mt-4 bg-hairline" />
       </div>
 
-      <div className="mt-auto">
+      <div className="mt-10 md:mt-auto">
         <h1
           style={
             {
@@ -45,7 +50,7 @@ export function PressReveal({
         >
           <Link
             href="/stealth"
-            className="tap-target optical-left link-underline inline-block font-display text-[clamp(1.5rem,3.4vw,2.5rem)] font-light tracking-[-0.02em] text-foreground/90 transition-opacity hover:opacity-70"
+            className="tap-target optical-left link-underline inline-block font-display text-[clamp(1.5rem,1.53vw+1.375rem,2.5rem)] font-light tracking-[-0.02em] text-foreground/90 transition-opacity hover:opacity-70"
           >
             Building
           </Link>

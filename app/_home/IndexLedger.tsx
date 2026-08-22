@@ -33,7 +33,7 @@ export function IndexLedger() {
   return (
     <section
       aria-labelledby="index-heading"
-      className="pt-[clamp(3rem,10vh,7rem)] pb-[clamp(2rem,6vh,7rem)]"
+      className="pt-10 pb-10 md:pt-[clamp(3rem,10vh,7rem)] md:pb-[clamp(2rem,6vh,7rem)]"
     >
       <h2 id="index-heading" className="label-mono mb-8">
         Background

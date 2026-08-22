@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.1.0] - 2026-08-22
+
+Composition. The first mobile pass fixed every measurable defect and the landing page still looked
+wrong on a real phone: the name sat small against a wide measure, and the stack was bottom-anchored
+behind a void. Passing tests are not the same as a page that reads well.
+
+### Changed
+- The name fills about 77% of the measure on a phone, up from about 60%. `.text-monument` is
+  overridden inside the phone query, because `@theme inline` compiles the value into the utility
+  and a token override there does nothing. The 7rem cap meets the desktop curve at 768px, so there
+  is no jump at the breakpoint. Desktop is untouched.
+- Below `md` the hero is sized by its content — no `min-h`, no `mt-auto`. Bottom-anchoring reads as
+  a gallery label on a wide desktop viewport; on a tall phone it dropped the whole stack to the
+  bottom of the box. The record now starts on the first screen.
+- Below `md` the vertical rhythm is fixed `rem`, not `vh`. A `vh` gap grows on a tall phone, which
+  is backwards. The rhythm is now identical at 320, 375, 393 and 430: 40px from the rule to the
+  name, 62px from the follow row to "Background".
+- "Building" gets a fitted curve. It was frozen at its 24px floor on every phone, the same defect
+  the monument and the ledger role had.
+
+### Added
+- Two composition assertions in `e2e/mobile.spec.ts`: the name must fill more than 68% of the
+  measure, and no gap in the hero may exceed 80px. These are what the defect tests missed. The gap
+  assertion immediately caught a 126px gap on the taller Pixel viewport.
+
 ## [2.1.0.0] - 2026-08-21
 
 Mobile. The relaunch was tuned on a desktop viewport and never adapted for a phone: the repository

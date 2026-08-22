@@ -71,7 +71,12 @@ Rules that hold at every width:
 4. **Every hand-written `:hover` must be wrapped in `@media (hover: hover) and (pointer: fine)`.** Tailwind's `hover:` variant is already gated; plain CSS in `globals.css` and `reading.css` is not, and an ungated rule sticks after a tap.
 5. **Nothing is `position: fixed` at the bottom of a phone screen.** `env(safe-area-inset-bottom)` clears the home indicator but cannot clear Safari's bottom toolbar. Dock the control in the footer below `md` instead, as `Colophon` does with the sound toggle.
 6. **A reveal animates `grid-template-rows: 0fr → 1fr`, never a fixed `max-height`.** A magic pixel height clips as soon as the text wraps one line further.
-7. **Reference widths:** 320, 375, 393, 430 portrait, and 734×343 landscape. `playwright.config.ts` runs every spec at all of them.
+7. **Below `md` the vertical rhythm is fixed `rem`, not `vh`.** A `vh` gap grows on a tall phone, which is backwards — a taller screen should hold more content, not more air. `vh` spacing stays on desktop, where the viewport is wide and short.
+8. **Below `md` the hero is sized by its content.** No `min-h`, no `mt-auto`. Bottom-anchoring is a gallery-label placement that reads well on a wide desktop viewport; on a tall phone it drops the whole stack to the bottom of the box and leaves dead white above it.
+9. **The name fills at least 70% of the measure on a phone.** A desktop-fitted curve gives about 60%, which reads as small type stranded in a wide column. `.text-monument` is therefore overridden inside the phone query — see the `@theme inline` note below.
+10. **Reference widths:** 320, 375, 393, 430 portrait, and 734×343 landscape. `playwright.config.ts` runs every spec at all of them.
+
+> **`@theme inline` compiles the value into the utility.** `text-monument` emits `font-size: clamp(...)`, not `var(--text-monument)`, so overriding that token in a media query does nothing. Override the *utility* (`.text-monument { … }`). Tokens consumed by hand-written CSS — `--text-label` inside `.label-mono` — do respond to a token override.
 
 ## Motion
 - **Entrance:** `.press-in` — a CSS "focus pull". The name resolves from an 18px blur; the statement and follow row settle after it. Delay is set per element through `--press-delay`. Server HTML, so the LCP element is never hidden behind JavaScript.
@@ -96,6 +101,7 @@ Rules that hold at every width:
 | 2026-08-21 | Fluid curves use slope + intercept | A bare `vw` bottoms out on its floor across every phone, so the type froze. See `docs/decisions/0001-mobile-responsive-foundations.md`. |
 | 2026-08-21 | `--gutter-x` / `--edge-*` token layer | Four hand-copied position strings had already drifted 9px out of alignment with the content gutter. |
 | 2026-08-21 | Sound control docks in the colophon below `md` | No CSS can lift a bottom-fixed element clear of Safari's bottom toolbar. |
+| 2026-08-22 | Phone hero is content-sized, with a fixed-rem rhythm | Measurements can all pass while the page still looks wrong. Bottom-anchoring plus `vh` gaps left the name small and stranded between two voids. |
 
 ### Superseded
 The 2026-03-27 system ("The Encounter": a four-phase WebGL particle field, Geist Sans 800, pure black
