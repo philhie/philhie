@@ -118,13 +118,19 @@ test.describe("home", () => {
     await page.waitForLoadState("networkidle");
   });
 
-  test("the name sets on one line", async ({ page }) => {
+  /**
+   * One line on desktop, two on a phone. The two-line setting is deliberate —
+   * it is what lets the name carry a full-screen hero. Three lines would mean
+   * the type has outgrown the measure.
+   */
+  test("the name sets on one line, or two on a phone", async ({ page }) => {
     const lines = await page.evaluate(() => {
       const range = document.createRange();
       range.selectNodeContents(document.querySelector("h1")!);
       return range.getClientRects().length;
     });
-    expect(lines).toBe(1);
+    expect(lines).toBeLessThanOrEqual((await isMobileWidth(page)) ? 2 : 1);
+    expect(lines).toBeGreaterThanOrEqual(1);
   });
 
   test("the dateline never splits a place name", async ({ page }) => {
@@ -211,37 +217,55 @@ test.describe("home", () => {
    * "looks right" reduces to, and they are the ones a screenshot review caught
    * that the defect tests did not.
    */
-  test("the name fills the measure on a phone", async ({ page }) => {
+  /**
+   * The hero fills the screen, so what matters is whether the name fills the
+   * hero — not how wide one line is. A single line at 78% of the measure passed
+   * the old width check while covering only half the screen, and a full-screen
+   * hero with half-full content is a hole, not breathing room.
+   */
+  test("the name carries the hero on a phone", async ({ page }) => {
     test.skip(!(await isMobileWidth(page)), "a phone-composition rule");
-    const fill = await page.evaluate(() => {
-      const range = document.createRange();
-      range.selectNodeContents(document.querySelector("h1")!);
-      const text = Math.max(
-        ...[...range.getClientRects()].map((r) => r.width),
-      );
-      const main = document.querySelector("main")!;
-      const measure =
-        main.getBoundingClientRect().width -
-        parseFloat(getComputedStyle(main).paddingLeft) * 2;
-      return Math.round((text / measure) * 100);
-    });
-    expect(fill, `the name fills only ${fill}% of the measure`).toBeGreaterThan(
-      68,
-    );
-  });
-
-  test("the hero has no dead vertical gap on a phone", async ({ page }) => {
-    test.skip(!(await isMobileWidth(page)), "a phone-composition rule");
-    const gap = await page.evaluate(() => {
+    const { namePct, inkPct } = await page.evaluate(() => {
       const box = (s: string) => document.querySelector(s)!.getBoundingClientRect();
-      return Math.round(
-        box("h1").top - box('header [data-slot="separator"]').bottom,
-      );
+      const ink = box("nav").bottom - box("header p").top;
+      return {
+        namePct: Math.round((box("h1").height / window.innerHeight) * 100),
+        inkPct: Math.round((ink / window.innerHeight) * 100),
+      };
     });
     expect(
-      gap,
-      `${gap}px of empty white between the rule and the name`,
-    ).toBeLessThanOrEqual(80);
+      namePct,
+      `the name covers only ${namePct}% of the screen height`,
+    ).toBeGreaterThanOrEqual(28);
+    // Masthead row to follow row must span the screen, not clump in one half.
+    expect(
+      inkPct,
+      `the hero content spans only ${inkPct}% of the screen`,
+    ).toBeGreaterThanOrEqual(80);
+  });
+
+  /**
+   * The hero is three groups — masthead row, name, follow row — spread over the
+   * screen. The slack between them must stay balanced: dumping it all into one
+   * gap (which `mt-auto` on a single child does) leaves a hole in the middle
+   * that grows with screen height.
+   */
+  test("the hero's slack is balanced, not pooled in one gap", async ({
+    page,
+  }) => {
+    test.skip(!(await isMobileWidth(page)), "a phone-composition rule");
+    const { top, bottom } = await page.evaluate(() => {
+      const box = (s: string) => document.querySelector(s)!.getBoundingClientRect();
+      const name = document.querySelector("h1")!.parentElement!.getBoundingClientRect();
+      return {
+        top: Math.round(name.top - box('header [data-slot="separator"]').bottom),
+        bottom: Math.round(box("nav").top - name.bottom),
+      };
+    });
+    expect(
+      Math.abs(top - bottom),
+      `gaps are ${top}px above the name and ${bottom}px below — pooled, not balanced`,
+    ).toBeLessThanOrEqual(48);
   });
 
   /**

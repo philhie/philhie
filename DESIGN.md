@@ -72,8 +72,8 @@ Rules that hold at every width:
 5. **Nothing is `position: fixed` at the bottom of a phone screen.** `env(safe-area-inset-bottom)` clears the home indicator but cannot clear Safari's bottom toolbar. Dock the control in the footer below `md` instead, as `Colophon` does with the sound toggle.
 6. **A reveal animates `grid-template-rows: 0fr → 1fr`, never a fixed `max-height`.** A magic pixel height clips as soon as the text wraps one line further.
 7. **Below `md` the vertical rhythm is fixed `rem`, not `vh`.** A `vh` gap grows on a tall phone, which is backwards — a taller screen should hold more content, not more air. `vh` spacing stays on desktop, where the viewport is wide and short.
-8. **Below `md` the hero IS the opening screen** (`min-h-svh`), and the record starts below the fold. The stack is bracketed — masthead row and name at the top, follow row anchored to the bottom edge with `mt-auto`. Do not bottom-anchor the whole stack (it leaves dead white above the name) and do not let it clump at the top (it leaves the bottom half blank).
-9. **The name fills at least 70% of the measure on a phone.** A desktop-fitted curve gives about 60%, which reads as small type stranded in a wide column. `.text-monument` is therefore overridden inside the phone query — see the `@theme inline` note below.
+8. **Below `md` the hero IS the opening screen** (`min-h-svh`), and the record starts below the fold. It is three groups — masthead row, name, follow row — distributed with `justify-between`, so the slack splits into two balanced gaps. Never pool the slack in one gap (`mt-auto` on a single child): the hole grows with screen height and reads as broken.
+9. **A full-screen hero needs type that fills it.** The name sets on **two lines** below `md` at `min(34vw, 19vh)`. One line covered half the screen, and a full-screen hero with half-full content is a hole, not breathing room. The `19vh` term means a taller screen spends the extra room on type rather than on gaps.
 10. **Reference widths:** 320, 375, 393, 430 portrait, and 734×343 landscape. `playwright.config.ts` runs every spec at all of them.
 
 > **A transformed ancestor captures `position: fixed`.** The hero's `.press-in` entrance animates a transform, so any `fixed` descendant is positioned against that box, not the viewport. Keep floating controls out of animated wrappers. Nothing overlaps when this breaks, so a collision test will not catch it — assert the offset instead.
@@ -106,7 +106,8 @@ Rules that hold at every width:
 | 2026-08-22 | Phone hero is content-sized, with a fixed-rem rhythm | Measurements can all pass while the page still looks wrong. Bottom-anchoring plus `vh` gaps left the name small and stranded between two voids. |
 | 2026-08-22 | The after-hours control docks into the masthead row below `md` | Floating, it sat in a band of its own above the dateline with an empty corner beside it. Docked, the row reads as one masthead: dateline left, control right, one rule under both. |
 | 2026-08-22 | A section break is not a hero gap | Holding both to one ceiling squeezed the break to 62px, and the record read as a continuation of the hero. A break needs a floor as well as a ceiling. |
-| 2026-08-22 | The phone hero fills the screen; the fold is the section break | An explicit 128px break still left the record on the opening screen. A full-screen hero removes the question. The follow row anchors to the bottom edge so the screen reads as a composed cover, not a clump. |
+| 2026-08-22 | The phone hero fills the screen; the fold is the section break | An explicit 128px break still left the record on the opening screen. A full-screen hero removes the question. |
+| 2026-08-22 | Two-line name, `justify-between`, on the phone hero | A full-screen hero holding one line of type left a 340px hole. Bigger type fills the screen with ink; distributing three groups keeps the leftover slack balanced instead of pooling it. |
 
 ### Superseded
 The 2026-03-27 system ("The Encounter": a four-phase WebGL particle field, Geist Sans 800, pure black

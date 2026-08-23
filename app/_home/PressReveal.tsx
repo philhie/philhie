@@ -37,20 +37,25 @@ export function PressReveal({
           control is. Wrapping the row moved it from 64px off the viewport edge
           to 64px off this box, i.e. 128px, on desktop. The animation goes on
           the dateline and the rule instead; the control does not need it. */}
-      <div className="flex items-center justify-between gap-4">
+      <div>
+        <div className="flex items-center justify-between gap-4">
+          <div
+            className="press-in min-w-0"
+            style={{ "--press-delay": "0.1s" } as CSSProperties}
+          >
+            <Dateline place={place} timezone={timezone} initialTime={initialTime} />
+          </div>
+          <ThemeToggle variant="docked" />
+        </div>
         <div
-          className="press-in min-w-0"
+          className="press-in"
           style={{ "--press-delay": "0.1s" } as CSSProperties}
         >
-          <Dateline place={place} timezone={timezone} initialTime={initialTime} />
+          <Separator className="mt-4 bg-hairline" />
         </div>
-        <ThemeToggle variant="docked" />
-      </div>
-      <div className="press-in" style={{ "--press-delay": "0.1s" } as CSSProperties}>
-        <Separator className="mt-4 bg-hairline" />
       </div>
 
-      <div className="mt-10 md:mt-auto">
+      <div className="md:mt-auto">
         <h1
           style={
             {
@@ -77,7 +82,7 @@ export function PressReveal({
       </div>
 
       <div
-        className="press-in mt-auto pt-10 md:mt-[clamp(2.5rem,7vh,4.5rem)] md:pt-0"
+        className="press-in md:mt-[clamp(2.5rem,7vh,4.5rem)]"
         style={{ "--press-delay": "0.7s" } as CSSProperties}
       >
         <Socials />
