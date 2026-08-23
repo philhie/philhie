@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.4.0] - 2026-08-22
+
+The full-screen phone hero, made to actually fill the screen.
+
+v2.1.3.0 gave the hero the whole viewport but left the content unchanged, so ~250px of type sat in a
+659px screen with `mt-auto` pooling every pixel of slack into one gap. The result was a 340px hole
+between "Building" and the follow row. A full-screen hero with half-full content is a hole, not
+breathing room.
+
+### Changed
+- The name sets on **two lines** below `md`, at `min(34vw, 19vh)` — 108px at 320, 125px at 393,
+  140px at 430. One line at 21vw covered about half the screen. The `19vh` term means a taller phone
+  spends the extra room on type rather than on gaps.
+- The hero is three groups — masthead row, name, follow row — distributed with `justify-between`.
+  The slack now splits into two balanced gaps (117px above the name and 107px below, at 393) instead
+  of pooling into one that grew with screen height: it was 114px at 568 and 251px at 739.
+- Hero content now spans 90-91% of the screen at every reference width, up from about 50%.
+
+### Changed (tests)
+- The name test asserted a single line; two is now correct below `md`, one above.
+- The width-fill assertion is replaced. A single line at 78% of the measure passed it while covering
+  half the screen — it measured the wrong thing for a full-screen hero. The name must now cover at
+  least 28% of the screen height, and the hero content at least 80%.
+- Added a balance assertion: the gaps above and below the name must be within 48px of each other,
+  which is what catches slack pooled into one hole.
+
+Desktop is untouched: 172.8px on one line, 92svh hero, floating control at 64px.
+
 ## [2.1.3.0] - 2026-08-22
 
 The phone hero now owns the opening screen.

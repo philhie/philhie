@@ -19,7 +19,7 @@ export function Masthead() {
   const initialTime = localTimeString(HOME_TZ);
 
   return (
-    <header className="flex min-h-svh flex-col pt-[max(clamp(2rem,6vh,3.5rem),var(--edge-top))] pb-8 md:min-h-[92svh] md:pb-[clamp(2rem,7vh,5rem)] md:pt-[clamp(2rem,6vh,3.5rem)]">
+    <header className="flex min-h-svh flex-col justify-between pt-[max(clamp(2rem,6vh,3.5rem),var(--edge-top))] pb-8 md:justify-start md:min-h-[92svh] md:pb-[clamp(2rem,7vh,5rem)] md:pt-[clamp(2rem,6vh,3.5rem)]">
       <PressReveal
         place={HOME_CITY}
         timezone={HOME_TZ}

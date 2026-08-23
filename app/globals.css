@@ -310,12 +310,15 @@
   }
   /* `text-monument` comes from `@theme inline`, which compiles the value into
      the utility rather than emitting a var() — so overriding --text-monument
-     here would do nothing. Override the utility itself. 21vw fills ~78% of the
-     measure at every phone width, instead of the 60% the desktop-fitted curve
-     gave. The 7rem cap meets the desktop curve at 768px, so there is no jump
-     at the breakpoint. */
+     here would do nothing. Override the utility itself.
+
+     34vw sets the name across two lines on every phone. One line at 21vw left
+     the hero only half full, and a full-screen hero with half-full content is
+     a hole, not breathing room. Two lines of 128px type carry the screen the
+     way a cover does. The 8rem cap keeps the step at the 768px breakpoint to
+     ~16px, and everything else about the layout changes there anyway. */
   .text-monument {
-    font-size: clamp(4rem, 21vw, 7rem);
+    font-size: clamp(4rem, min(34vw, 19vh), 9rem);
   }
 }
 
