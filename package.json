@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "preview": "serve out -l 3000",
+    "deploy": "npm run build && wrangler pages deploy out --project-name philhie --branch main",
     "start": "npm run preview",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",

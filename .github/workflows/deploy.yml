@@ -1,0 +1,40 @@
+# Push to main -> live on philhie.com.
+#
+# Needs two repo secrets (Settings -> Secrets and variables -> Actions):
+#   CLOUDFLARE_API_TOKEN   a token with Account -> Cloudflare Pages -> Edit
+#   CLOUDFLARE_ACCOUNT_ID  9adf6a22141ded2ad5458f194509a383
+# Until both exist this workflow fails at the deploy step and nothing else breaks;
+# `npm run deploy` from a laptop stays a valid fallback.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # The site is a static export with no runtime, so these three are the
+      # whole safety net. Keep them ahead of the deploy.
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test
+
+      - run: npm run build
+
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy out --project-name philhie --branch main
