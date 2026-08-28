@@ -61,3 +61,28 @@ Build with `output: "export"` and host the result on Cloudflare Pages.
 - This does not fix Kengo. `deploy` and the `sauron-*` projects remain paused on Vercel. If Kengo
   returns to that Hobby account it will trip the same fair-use block — Hobby forbids commercial use,
   which is the likely root cause. Kengo needs its own hosting decision.
+
+## Deployment (2026-08-27)
+
+- Cloudflare account `9adf6a22141ded2ad5458f194509a383`, zone `philhie.com`
+  (`28d9e7eda3925d4045c832d204cd216b`).
+- Pages project **`philhie`**, production branch `main`, live at <https://philhie.pages.dev>.
+  Deployed from `out/` with `wrangler pages deploy out --project-name philhie --branch main`.
+- Credentials: `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` already exist in
+  `~/.config/kengo/secrets.env`. That token grants Pages read/write but **not** Zone DNS edit, and
+  `/user/tokens/verify` returns "Invalid API Token" for it while `/accounts` and `/zones` succeed —
+  it simply lacks self-read. Do not re-request these values.
+
+### Outstanding — DNS cutover
+
+`philhie.com` and `www.philhie.com` are attached to the Pages project but sit at `status=pending`,
+because DNS still points at Vercel and the token cannot rewrite it. To finish, replace these records
+in the philhie.com zone:
+
+| Name | Current | Change to |
+| --- | --- | --- |
+| `philhie.com` | `A 216.198.79.1` | `CNAME philhie.pages.dev` (proxied; CNAME flattening handles the apex) |
+| `www` | `CNAME …vercel-dns-017.com` | `CNAME philhie.pages.dev` (proxied) |
+
+Both domains then move to `status=active` on their own and Google-issued certs provision. Granting
+`Zone → DNS → Edit` on philhie.com to the existing token lets this be done without the dashboard.
