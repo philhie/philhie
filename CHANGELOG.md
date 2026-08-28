@@ -2,6 +2,43 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.0.0] - 2026-08-27
+
+Off Vercel. The site is now a static export bound for Cloudflare Pages.
+
+On 2026-08-23 the Vercel team was soft-blocked account-wide with `FAIR_USE_LIMITS_EXCEEDED` on
+`fluidCpuDuration`, and every domain on it began returning `402 DEPLOYMENT_DISABLED` — philhie.com
+included. The site itself was healthy; it was taken down by CPU that other projects on the same
+Hobby account burned. Measurement showed this site needs no server at all.
+
+### Changed
+- `output: "export"`. All 11 routes prerender: `/`, `/stealth`, `/thoughts`, `/thoughts/[slug]`,
+  `/subdomains/it`. No dynamic routes remain.
+- `force-dynamic` is gone from `/` and `/stealth`. It existed only to seed the masthead clock's
+  first paint, and `Dateline` is a client component that already corrects the time on mount. The
+  build-time value stays the SSR seed, so there is no hydration mismatch — the cost is one painted
+  frame of a stale time on first load.
+- `opengraph-image.tsx` and `apple-icon.tsx` are replaced by the byte-identical PNGs they produced.
+  Declaring `metadata.icons` suppresses the file convention, so `icons.apple` now names the real
+  emitted path `/apple-icon.png`; the old `/apple-icon` route path 404s under export.
+- Analytics moved from `@vercel/analytics` + `@vercel/speed-insights` to Cloudflare Web Analytics,
+  gated on `NEXT_PUBLIC_CF_BEACON_TOKEN` so local and preview builds stay untracked.
+
+### Removed
+- `middleware.ts` and its test. Static export does not support middleware, and the one hostname it
+  served, `it.philhie.com`, does not resolve. The content survives at `/subdomains/it` and can ship
+  as its own Pages project.
+
+### Changed (tooling)
+- `next start` cannot serve an exported build, so `npm start` now aliases `npm run preview`
+  (`serve out`).
+- `npm run test:e2e:export` runs the full Playwright suite against the real `out/` bundle rather
+  than `next dev`.
+
+### Docs
+- `docs/decisions/0002-static-export-cloudflare-pages.md` records the measurement, the decision, and
+  what was rejected.
+
 ## [2.1.4.0] - 2026-08-22
 
 The full-screen phone hero, made to actually fill the screen.

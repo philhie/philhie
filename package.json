@@ -5,17 +5,17 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "preview": "serve out -l 3000",
+    "start": "npm run preview",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:export": "E2E_TARGET=export playwright test"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
-    "@vercel/analytics": "^2.0.1",
-    "@vercel/speed-insights": "^2.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "gray-matter": "^4.0.3",
@@ -44,6 +44,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "jsdom": "^29.0.1",
+    "serve": "^14.2.6",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.2"

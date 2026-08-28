@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Geist_Mono } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
@@ -33,6 +31,11 @@ export const viewport: Viewport = {
   // ThemeColorSync repaints this tag when the visitor flips to after-hours.
   themeColor: "#ffffff",
 };
+
+// Cloudflare Web Analytics — privacy-first, free, no cookies. The beacon only
+// renders once NEXT_PUBLIC_CF_BEACON_TOKEN is set (Pages project → Settings →
+// Variables), so local and preview builds stay untracked.
+const BEACON_TOKEN = process.env.NEXT_PUBLIC_CF_BEACON_TOKEN;
 
 const DESCRIPTION = "Phil Hie. Building.";
 
@@ -72,7 +75,10 @@ export const metadata: Metadata = {
       { url: "/favicon.ico", sizes: "48x48" },
       { url: "/icon.svg", type: "image/svg+xml" },
     ],
-    apple: [{ url: "/apple-icon" }],
+    // Must be the real emitted filename. Declaring `icons` at all suppresses
+    // the app/apple-icon.png file convention, and the old "/apple-icon" route
+    // path no longer exists under static export.
+    apple: [{ url: "/apple-icon.png", sizes: "180x180" }],
   },
   robots: {
     index: true,
@@ -100,8 +106,13 @@ export default function RootLayout({
         >
           {children}
         </ThemeProvider>
-        <Analytics />
-        <SpeedInsights />
+        {BEACON_TOKEN ? (
+          <script
+            defer
+            src="https://static.cloudflareinsights.com/beacon.min.js"
+            data-cf-beacon={`{"token":"${BEACON_TOKEN}"}`}
+          />
+        ) : null}
       </body>
     </html>
   );
