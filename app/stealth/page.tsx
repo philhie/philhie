@@ -6,9 +6,6 @@ import { Dateline } from "../_home/Dateline";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/theme-toggle";
 
-// SF dateline → request-time.
-export const dynamic = "force-dynamic";
-
 export const metadata: Metadata = {
   title: "Sealed",
   description: "A company is being built here.",

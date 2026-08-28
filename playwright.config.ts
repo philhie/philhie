@@ -22,8 +22,10 @@ export default defineConfig({
     { name: "phone-android", use: { ...devices["Pixel 7"] } }, // 412x839  chromium
     { name: "phone-landscape", use: { ...devices["iPhone 15 Pro landscape"] } }, // 734x343
   ],
+  // E2E_TARGET=export runs the suite against the real `out/` bundle that ships
+  // to Cloudflare Pages (clean-URL routing included), rather than `next dev`.
   webServer: {
-    command: "npm run dev",
+    command: process.env.E2E_TARGET === "export" ? "npm run preview" : "npm run dev",
     port: 3000,
     reuseExistingServer: true,
     timeout: 60000,

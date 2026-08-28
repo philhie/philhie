@@ -1,7 +1,8 @@
 /**
- * Visitor-local time for the masthead dateline. Pure Intl — no network, no
- * geolocation prompt. Computed on the server for first paint (from the Vercel
- * geo timezone), then re-read on the client each minute.
+ * Local time for the masthead dateline, pinned to HOME_TZ (not the visitor's
+ * zone). Pure Intl — no network, no geolocation prompt. The site is a static
+ * export, so the server value is baked at build time and is only a first-paint
+ * seed; Dateline re-reads the real clock on mount and then each minute.
  */
 
 export function localTimeString(tz: string | null): string {
