@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { CSSProperties } from "react";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -72,12 +71,12 @@ export function PressReveal({
           className="press-in mt-[clamp(1.25rem,3vh,2.25rem)]"
           style={{ "--press-delay": "0.5s" } as CSSProperties}
         >
-          <Link
-            href="/stealth"
+          <a
+            href="https://preambient.com"
             className="tap-target optical-left link-underline inline-block font-display text-[clamp(1.5rem,1.53vw+1.375rem,2.5rem)] font-light tracking-[-0.02em] text-foreground/90 transition-opacity hover:opacity-70"
           >
-            Building
-          </Link>
+            Founder, Preambient
+          </a>
         </div>
       </div>
 

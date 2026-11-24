@@ -9,15 +9,15 @@ const PROPS = {
 };
 
 describe("PressReveal", () => {
-  it("renders the name (LCP), the 'Building' link to the sealed page, and the adaptive dateline as real DOM", () => {
+  it("renders the name (LCP), the company link, and the adaptive dateline as real DOM", () => {
     const { container } = render(<PressReveal {...PROPS} />);
     const h1 = screen.getByRole("heading", { level: 1 });
     expect(h1).toHaveTextContent("Phil Hie");
     // LCP text is present and NOT inline-hidden (entrance is CSS-only, never opacity:0 inline).
     expect(h1.style.opacity).toBe("");
 
-    const building = screen.getByRole("link", { name: /building/i });
-    expect(building).toHaveAttribute("href", "/stealth");
+    const companyLink = screen.getByRole("link", { name: "Founder, Preambient" });
+    expect(companyLink).toHaveAttribute("href", "https://preambient.com");
     expect(container.textContent).toContain("San Francisco");
   });
 

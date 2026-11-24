@@ -38,9 +38,9 @@ export function Socials({ className }: { className?: string }) {
         className,
       )}
     >
-      <SocialLink href={SOCIALS.x}>X</SocialLink>
-      <SocialLink href={SOCIALS.linkedin}>LinkedIn</SocialLink>
-      <SocialLink href={SOCIALS.github}>GitHub</SocialLink>
+      {Object.entries(SOCIALS).map(([label, href]) => (
+        <SocialLink key={label} href={href}>{label}</SocialLink>
+      ))}
     </nav>
   );
 }

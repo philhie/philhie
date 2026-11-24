@@ -13,7 +13,7 @@ export interface IndexEntry {
 }
 
 export const INDEX: IndexEntry[] = [
-  { n: "01", role: "Founder", company: "Stealth", year: "2026 —", receipt: "in stealth" },
+  { n: "01", role: "Founder", company: "Preambient", year: "2026 —", receipt: "preambient.com" },
   {
     n: "02",
     role: "Founders Associate",

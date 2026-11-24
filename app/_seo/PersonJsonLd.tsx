@@ -16,12 +16,12 @@ export function PersonJsonLd() {
     description: POSITIONING,
     knowsAbout: ["Artificial intelligence", "Startups", "Finance", "Product"],
     alumniOf: [{ "@type": "Organization", name: "Goldman Sachs" }],
-    worksFor: { "@type": "Organization", name: "Stealth" },
+    worksFor: { "@type": "Organization", name: "Preambient", url: "https://preambient.com" },
     hasOccupation: INDEX.map((e) => ({
       "@type": "Occupation",
       name: `${e.role}, ${e.company}`,
     })),
-    sameAs: [SOCIALS.github, SOCIALS.linkedin, SOCIALS.x],
+    sameAs: Object.values(SOCIALS),
   };
 
   return (

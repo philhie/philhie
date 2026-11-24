@@ -3,8 +3,7 @@ import { HOME_CITY, HOME_TZ } from "../_lib/site";
 import { localTimeString } from "../_lib/clock";
 
 /**
- * The hero. San Francisco dateline, the monumental name, "Building" (→ the
- * sealed page), and the follow row — all above the fold. Server HTML; the
+ * The hero. San Francisco dateline, the monumental name, the founder role, and the follow row — all above the fold. Server HTML; the
  * entrance is pure CSS.
  *
  * Below `md` the hero IS the opening screen: `min-h-svh`, with the masthead row

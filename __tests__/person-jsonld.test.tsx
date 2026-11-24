@@ -16,7 +16,7 @@ describe("PersonJsonLd", () => {
     expect(data.jobTitle).toBe("Founder");
     expect(JSON.stringify(data.alumniOf)).toContain("Goldman Sachs");
     expect(Array.isArray(data.sameAs)).toBe(true);
-    expect(data.sameAs).toHaveLength(3);
+    expect(data.sameAs).toHaveLength(6);
     expect(data.sameAs.join(" ")).toContain("github.com/philhie");
   });
 });

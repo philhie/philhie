@@ -1,16 +1,16 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Monograph homepage", () => {
-  test("renders the masthead: name, the 'Building' link, adaptive dateline", async ({
+  test("renders the masthead: name, the company link, adaptive dateline", async ({
     page,
   }) => {
     await page.goto("/");
     await expect(page.locator("h1")).toContainText("Phil Hie", {
       timeout: 6000,
     });
-    const building = page.getByRole("link", { name: /^building$/i });
-    await expect(building).toBeVisible({ timeout: 6000 });
-    await expect(building).toHaveAttribute("href", "/stealth");
+    const companyLink = page.getByRole("link", { name: "Founder, Preambient" });
+    await expect(companyLink).toBeVisible({ timeout: 6000 });
+    await expect(companyLink).toHaveAttribute("href", "https://preambient.com");
     await expect(page.getByText(/San Francisco/i)).toBeVisible();
   });
 

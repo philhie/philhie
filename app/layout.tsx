@@ -37,7 +37,7 @@ export const viewport: Viewport = {
 // Variables), so local and preview builds stay untracked.
 const BEACON_TOKEN = process.env.NEXT_PUBLIC_CF_BEACON_TOKEN;
 
-const DESCRIPTION = "Phil Hie. Building.";
+const DESCRIPTION = "Phil Hie. Founder, Preambient.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://philhie.com"),
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
   keywords: [
     "Phil Hie",
     "founder",
-    "stealth startup",
+    "Preambient",
     "technology",
     "Goldman Sachs",
     "AI",
